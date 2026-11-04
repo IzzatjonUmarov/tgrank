@@ -48,7 +48,7 @@ function categoryId(slug) {
 
 function guessLanguage(info) {
   const text = `${info.title} ${info.description}`;
-  if (/[ўқғҳ]/i.test(text) || /\b(va|uchun|bilan|haqida|yangiliklar)\b|[oOgG][ʻ'‘`]/.test(text)) return 'uz';
+  if (/[ўқғҳ]/i.test(text) || /\b(va|uchun|bilan|haqida|yangilik\w*|rasmiy|xabar\w*|kanali?|bo'yicha)\b|[oOgG][ʻ'‘`]/i.test(text)) return 'uz';
   if (/[әңөұүһ]/i.test(text)) return 'kk';
   if (/[іїєґ]/i.test(text)) return 'uk';
   if (/[а-яё]/i.test(text)) return 'ru';

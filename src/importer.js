@@ -7,7 +7,7 @@ const config = require('./config');
 const { parseUsername, fetchChannelInfo, fetchPosts } = require('./telegram');
 const { recordStats } = require('./channels');
 const { guessCategoryId, guessLanguage, isUzbekMarket } = require('./classify');
-const { syncPosts } = require('./sync');
+const { syncChannel } = require('./sync');
 const { analyze } = require('./analysis');
 
 let stopped = false;
@@ -87,7 +87,7 @@ async function processOne() {
   const id = Number(lastInsertRowid);
   recordStats(id, info.subscribers);
   finish('done');
-  if (info.type === 'channel') await syncPosts(id, info.username);
+  if (info.type === 'channel') await syncChannel(db.get('SELECT * FROM channels WHERE id = ?', id)).catch(() => {});
   db.run(`UPDATE channels SET last_checked_at = datetime('now') WHERE id = ?`, id);
   analyze(id);
   return true;
