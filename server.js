@@ -12,6 +12,11 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', 1);
 
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
+
+// Служебная проверка для пинга и мониторинга: без сессии, не считается просмотром
+app.get('/healthz', (req, res) => {
+  res.set('Cache-Control', 'no-store').json({ ok: true, uptime: Math.round(process.uptime()) });
+});
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieSession({
@@ -67,6 +72,12 @@ if (require.main === module) {
     const importer = require('./src/importer');
     if (config.starterList) importer.enqueueStarterList();
     importer.runWorker();
+  }
+  if (config.keepAlive) {
+    const ping = () => fetch(`${config.baseUrl}/healthz`, { signal: AbortSignal.timeout(30_000) })
+      .catch((e) => console.error('[keep-alive]', e.message));
+    setInterval(ping, config.keepAliveMinutes * 60_000);
+    console.log(`[keep-alive] пинг ${config.baseUrl}/healthz каждые ${config.keepAliveMinutes} мин.`);
   }
   if (config.statsIntervalHours > 0 && process.env.DISABLE_STATS !== '1') {
     setTimeout(() => updateAll(), 60 * 1000);

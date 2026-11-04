@@ -261,7 +261,7 @@ router.get('/pricing', (req, res) => res.render('pricing', { title: 'Тариф�
 router.get('/faq', (req, res) => res.render('faq', { title: 'Вопросы и ответы' }));
 router.get('/api-docs', (req, res) => res.render('api-docs', { title: 'API' }));
 
-router.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nDisallow: /admin\nDisallow: /account\nSitemap: ${config.baseUrl}/sitemap.xml\n`));
+router.get('/robots.txt', (req, res) => res.type('text/plain').send(`User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /healthz\nSitemap: ${config.baseUrl}/sitemap.xml\n`));
 router.get('/sitemap.xml', (req, res) => {
   const urls = ['/', '/catalog', '/top', '/channels', '/groups', '/bots',
     ...db.all('SELECT slug FROM categories').map((c) => `/category/${c.slug}`),
