@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<div class="crumbs"><a href="/">Главная</a> / <% if (category) { %><a href="/catalog">Каталог</a> / <%= category.name %><% } else { %><%= title %><% } %></div>
+<h1><% if (category) { %><%= category.icon %> <% } %><%= title %> <small class="muted"><%= h.num(result.total) %></small></h1>
+
+<div class="catalog">
+  <aside class="filters panel">
+    <form method="get" action="<%= baseUrl %>">
+      <label>Поиск<input name="q" value="<%= f.q %>" placeholder="Название, @username, описание"></label>
+      <% if (!['/channels','/groups','/bots'].includes(baseUrl)) { %>
+      <label>Тип<select name="type"><option value="">Все</option><% for (const [k, v] of Object.entries(h.TYPES)) { %><option value="<%= k %>" <%= f.type === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+      <% } %>
+      <% if (!baseUrl.startsWith('/category/')) { %>
+      <label>Категория<select name="category"><option value="">Все</option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= f.category === c.slug ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
+      <% } %>
+      <label>Язык<select name="language"><option value="">Любой</option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= f.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+      <div class="two"><label>Подписчиков от<input name="min" type="number" min="0" value="<%= f.minSubs %>"></label><label>до<input name="max" type="number" min="0" value="<%= f.maxSubs %>"></label></div>
+      <label class="check"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Только с подтверждённым владельцем</label>
+      <label>Сортировка<select name="sort">
+        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', new: 'Новые', views: 'Просмотры на сайте' }; %>
+        <% for (const [k, v] of Object.entries(sorts)) { %><option value="<%= k %>" <%= f.sort === k ? 'selected' : '' %>><%= v %></option><% } %>
+      </select></label>
+      <button class="btn btn-primary btn-block">Применить</button>
+      <a class="btn btn-ghost btn-block" href="<%= baseUrl %>">Сбросить</a>
+    </form>
+  </aside>
+  <div>
+    <% if (!result.items.length) { %>
+      <div class="empty panel"><p>Ничего не найдено.</p><a class="btn btn-primary" href="/add">Добавить канал</a></div>
+    <% } else { %>
+      <div class="grid"><% result.items.forEach((c) => { %><%- include('partials/card', { c }) %><% }) %></div>
+      <%- include('partials/pagination', { result }) %>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

@@ -1,0 +1,35 @@
+<%- include('../partials/header') %>
+<h1>Каналы</h1>
+<%- include('_nav') %>
+<div class="tabs tabs-sub">
+  <% for (const [k, v] of Object.entries({ pending: 'На модерации', approved: 'Опубликованные', rejected: 'Отклонённые' })) { %><a class="<%= status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %>
+</div>
+<form class="inline-filters"><input type="hidden" name="status" value="<%= status %>"><input name="q" value="<%= q %>" placeholder="Поиск"><button class="btn btn-ghost btn-sm">Найти</button></form>
+<% const F = (action, label, cls = 'btn-ghost', extra = '') => `<form method="post" action="/admin/channels/${action}">${extra}<input type="hidden" name="_csrf" value="${csrf}"><button class="btn ${cls} btn-xs">${label}</button></form>`; %>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>Канал</th><th>Категория</th><th class="r">Подписчики</th><th>Добавлен</th><th>Действия</th></tr></thead>
+  <tbody>
+  <% result.items.forEach((c) => { %>
+  <tr>
+    <td><a class="tcell" href="/c/<%= c.username %>" target="_blank"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted">@<%= c.username %> · <%= h.TYPES[c.type] %> · <%= c.language %></small></span></a>
+      <div class="small muted clamp"><%= c.description %></div></td>
+    <td><form method="post" action="/admin/channels/<%= c.id %>/category"><input type="hidden" name="_csrf" value="<%= csrf %>">
+      <select name="category_id" onchange="this.form.submit()"><option value="">—</option><% categories.forEach((cat) => { %><option value="<%= cat.id %>" <%= c.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option><% }) %></select></form></td>
+    <td class="r"><%= h.num(c.subscribers) %></td>
+    <td class="small"><%= h.date(c.created_at) %></td>
+    <td class="actions">
+      <% if (status !== 'approved') { %><%- F(c.id + '/approve', '✔ Одобрить', 'btn-primary') %><% } %>
+      <% if (status !== 'rejected') { %><%- F(c.id + '/reject', '✖ Отклонить', 'btn-danger', '<input name="reason" placeholder="причина" class="xs">') %><% } %>
+      <% if (status === 'approved') { %><%- F(c.id + '/feature', c.featured ? '★ Убрать из избр.' : '☆ Закрепить') %><% } %>
+      <% if (c.boosted) { %><%- F(c.id + '/unboost', 'Снять буст') %><% } %>
+      <% if (c.owner_id) { %><%- F(c.id + '/reset-owner', 'Сбросить владельца') %><% } %>
+      <%- F(c.id + '/refresh', '↻ Обновить') %>
+      <form method="post" action="/admin/channels/<%= c.id %>/delete" onsubmit="return confirm('Удалить?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs">🗑</button></form>
+    </td>
+  </tr>
+  <% }) %>
+  <% if (!result.items.length) { %><tr><td colspan="5" class="muted">Пусто.</td></tr><% } %>
+  </tbody>
+</table></div>
+<%- include('../partials/pagination', { result }) %>
+<%- include('../partials/footer') %>

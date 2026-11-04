@@ -1,0 +1,103 @@
+<%- include('partials/header') %>
+<div class="crumbs"><a href="/">Главная</a> / <a href="/<%= channel.type %>s"><%= h.TYPES_PLURAL[channel.type] %></a><% if (channel.category_slug) { %> / <a href="/category/<%= channel.category_slug %>"><%= channel.category_name %></a><% } %></div>
+
+<% if (channel.status !== 'approved') { %>
+  <div class="flash flash-<%= channel.status === 'rejected' ? 'error' : 'info' %>">
+    <%= channel.status === 'pending' ? 'Канал на модерации — он виден только вам и администраторам.' : 'Канал отклонён модератором.' %><% if (channel.reject_reason) { %> Причина: <%= channel.reject_reason %><% } %>
+  </div>
+<% } %>
+
+<section class="ch-head panel">
+  <%- include('partials/avatar', { c: channel, size: 'lg' }) %>
+  <div class="ch-info">
+    <h1><%= channel.title %><% if (channel.tg_verified) { %> <span class="tick" title="Верифицирован Telegram">✔</span><% } %></h1>
+    <div class="muted">@<%= channel.username %> · <%= h.TYPES[channel.type] %> · <%= h.LANGUAGES[channel.language] || channel.language %>
+      <% if (channel.owner_id) { %> · <span class="badge ok">✔ владелец подтверждён</span><% } %>
+      <% if (channel.boosted) { %> · <span class="badge boost">🚀 Продвигается</span><% } %></div>
+    <p class="ch-desc"><%= channel.description %></p>
+    <% if (channel.tags) { %><div class="tags"><% channel.tags.split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => { %><a href="/search?q=<%= encodeURIComponent(t) %>">#<%= t %></a><% }) %></div><% } %>
+    <div class="ch-actions">
+      <a class="btn btn-primary" href="https://t.me/<%= channel.username %>" target="_blank" rel="noopener nofollow">Открыть в Telegram</a>
+      <% if (channel.status === 'approved') { %>
+      <form method="post" action="/c/<%= channel.username %>/vote"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= votedToday ? 'btn-ghost' : 'btn-accent' %>" <%= votedToday ? 'disabled' : '' %>>👍 <%= votedToday ? 'Вы голосовали' : 'Голосовать' %> · <%= channel.votes %></button></form>
+      <form method="post" action="/c/<%= channel.username %>/favorite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost"><%= isFav ? '★ В избранном' : '☆ В избранное' %></button></form>
+      <% } %>
+      <button class="btn btn-ghost" data-copy="<%= config.baseUrl %>/c/<%= channel.username %>">🔗 Поделиться</button>
+    </div>
+  </div>
+</section>
+
+<div class="kpis">
+  <div class="kpi"><span>Подписчики</span><b><%= h.num(channel.subscribers) %></b></div>
+  <div class="kpi"><span>За сутки</span><b><%- h.delta(channel.growth_day) %></b></div>
+  <div class="kpi"><span>За неделю</span><b><%- h.delta(channel.growth_week) %></b></div>
+  <div class="kpi"><span>За месяц</span><b><%- h.delta(channel.growth_month) %></b></div>
+  <div class="kpi"><span>Место в рейтинге</span><b>#<%= position %></b></div>
+  <div class="kpi"><span>Оценка</span><b><%= channel.rating_count ? channel.rating_avg.toFixed(1) : '—' %></b><small><%= channel.rating_count %> отзывов</small></div>
+</div>
+
+<div class="cols-main">
+  <div>
+    <section class="panel">
+      <div class="section-head"><h2>Динамика подписчиков</h2><span class="muted small">обновлено <%= h.date(channel.last_checked_at) %></span></div>
+      <div id="chart" class="chart" data-points='<%= JSON.stringify(history) %>'></div>
+      <% if (history.length < 2) { %><p class="muted small">График появится, когда накопится статистика (обновление каждые <%= config.statsIntervalHours %> ч.).</p><% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Отзывы (<%= reviews.length %>)</h2>
+      <% if (user && channel.status === 'approved' && !isOwner) { %>
+      <form class="review-form" method="post" action="/c/<%= channel.username %>/review">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <div class="rate">
+          <% for (let i = 5; i >= 1; i--) { %><input type="radio" id="r<%= i %>" name="rating" value="<%= i %>" <%= myReview && myReview.rating === i ? 'checked' : '' %>><label for="r<%= i %>">★</label><% } %>
+        </div>
+        <textarea name="text" rows="3" maxlength="2000" placeholder="Расскажите, чем полезен канал"><%= myReview ? myReview.text : '' %></textarea>
+        <button class="btn btn-primary btn-sm"><%= myReview ? 'Обновить отзыв' : 'Оставить отзыв' %></button>
+      </form>
+      <% } else if (!user) { %><p class="muted"><a href="/login?next=/c/<%= channel.username %>">Войдите</a>, чтобы оставить отзыв и голосовать.</p><% } %>
+      <% reviews.forEach((r) => { %>
+        <div class="review"><div><b><%= r.username %></b> <span class="stars"><%= h.stars(r.rating) %></span> <small class="muted"><%= h.date(r.created_at) %></small></div><% if (r.text) { %><p><%= r.text %></p><% } %></div>
+      <% }) %>
+    </section>
+  </div>
+
+  <aside>
+    <section class="panel">
+      <h3>Владельцу</h3>
+      <% if (isOwner || (user && user.role === 'admin')) { %>
+        <p class="small muted">Поднимите канал в блок «Продвигаемые» на главной и вверх каталога на <%= config.boostHours %> ч. Раз в сутки — <b>бесплатно</b>.</p>
+        <form method="post" action="/c/<%= channel.username %>/boost"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent btn-block" <%= canBoost ? '' : 'disabled' %>>🚀 <%= canBoost ? 'Продвинуть бесплатно' : 'Доступно позже' %></button></form>
+        <a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit">⚙️ Настройки</a>
+        <div class="widget">
+          <p class="small muted">Бейдж для сайта или поста:</p>
+          <code class="copy" data-copy='<a href="<%= config.baseUrl %>/c/<%= channel.username %>">Мы в рейтинге <%= config.siteName %></a>'>&lt;a href="<%= config.baseUrl %>/c/<%= channel.username %>"&gt;…</code>
+        </div>
+      <% } else if (!channel.owner_id) { %>
+        <p class="small muted">Это ваш канал? Подтвердите владение, чтобы управлять карточкой и бесплатно продвигать его.</p>
+        <a class="btn btn-ghost btn-block" href="/c/<%= channel.username %>/claim">Я владелец</a>
+      <% } else { %>
+        <p class="small muted">Владелец канала подтверждён.</p>
+      <% } %>
+    </section>
+    <section class="panel">
+      <h3>Информация</h3>
+      <dl class="dl">
+        <dt>Категория</dt><dd><%= channel.category_name || '—' %></dd>
+        <dt>Добавлен</dt><dd><%= h.date(channel.created_at) %></dd>
+        <dt>Просмотров на сайте</dt><dd><%= h.num(channel.views) %></dd>
+      </dl>
+      <% if (user && channel.status === 'approved') { %>
+      <details class="report"><summary class="small muted">Пожаловаться</summary>
+        <form method="post" action="/c/<%= channel.username %>/report"><input type="hidden" name="_csrf" value="<%= csrf %>">
+          <textarea name="reason" rows="2" required minlength="5" placeholder="Причина: спам, мошенничество, накрутка…"></textarea>
+          <button class="btn btn-ghost btn-sm">Отправить</button></form>
+      </details>
+      <% } %>
+    </section>
+    <% if (similar.length) { %>
+    <section class="panel"><h3>Похожие</h3><% similar.forEach((c) => { %><%- include('partials/row', { c }) %><% }) %></section>
+    <% } %>
+  </aside>
+</div>
+<%- include('partials/footer') %>

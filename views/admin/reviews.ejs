@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<h1>Отзывы</h1>
+<%- include('_nav') %>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>Канал</th><th>Автор</th><th>Оценка</th><th>Текст</th><th>Дата</th><th></th></tr></thead>
+  <tbody><% reviews.forEach((r) => { %>
+    <tr><td><a href="/c/<%= r.channel %>">@<%= r.channel %></a></td><td><%= r.username %></td><td class="stars"><%= h.stars(r.rating) %></td><td><%= r.text %></td><td class="small"><%= h.date(r.created_at) %></td>
+      <td><form method="post" action="/admin/reviews/<%= r.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs">🗑</button></form></td></tr>
+  <% }) %><% if (!reviews.length) { %><tr><td colspan="6" class="muted">Отзывов нет.</td></tr><% } %></tbody>
+</table></div>
+<%- include('../partials/footer') %>

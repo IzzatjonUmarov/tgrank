@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+<div class="narrow panel">
+  <h1>Подтверждение владения</h1>
+  <p>Канал: <a href="/c/<%= channel.username %>"><b><%= channel.title %></b> (@<%= channel.username %>)</a></p>
+  <ol class="steps">
+    <li>Откройте настройки <%= channel.type === 'bot' ? 'бота в @BotFather (/setdescription или /setabouttext)' : 'канала/группы в Telegram' %>.</li>
+    <li>Добавьте в описание этот код:<code class="big copy" data-copy="<%= code %>"><%= code %></code></li>
+    <li>Сохраните и нажмите «Проверить». После подтверждения код можно удалить.</li>
+  </ol>
+  <form method="post" action="/c/<%= channel.username %>/verify"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary">Проверить</button></form>
+</div>
+<%- include('partials/footer') %>

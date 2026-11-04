@@ -1,0 +1,13 @@
+<%- include('../partials/header') %>
+<div class="narrow panel">
+  <h1>Настройки @<%= channel.username %></h1>
+  <p class="muted small">Название, описание и аватар обновляются из Telegram автоматически.</p>
+  <form method="post" class="form"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Категория<select name="category_id"><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= channel.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
+    <label>Язык<select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= channel.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+    <label>Теги<input name="tags" value="<%= channel.tags %>"></label>
+    <button class="btn btn-primary">Сохранить</button>
+  </form>
+  <form method="post" action="/account/channel/<%= channel.id %>/delete" onsubmit="return confirm('Удалить канал из каталога вместе со статистикой?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Удалить из каталога</button></form>
+</div>
+<%- include('../partials/footer') %>

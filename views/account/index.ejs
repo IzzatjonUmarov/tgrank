@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+<div class="section-head">
+  <h1>Личный кабинет</h1>
+  <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Выйти</button></form>
+</div>
+<p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · с <%= h.date(user.created_at) %></p>
+
+<section class="panel">
+  <div class="section-head"><h2>Мои каналы</h2><a class="btn btn-primary btn-sm" href="/add">+ Добавить</a></div>
+  <% if (!mine.length) { %><p class="muted">Вы ещё не добавляли каналы.</p><% } else { %>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Канал</th><th>Статус</th><th class="r">Подписчики</th><th>Владение</th><th></th></tr></thead>
+    <tbody>
+    <% mine.forEach((c) => { %>
+      <tr>
+        <td><a class="tcell" href="/c/<%= c.username %>"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted">@<%= c.username %></small></span></a></td>
+        <td><span class="badge st-<%= c.status %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[c.status] %></span><% if (c.boosted) { %> <span class="badge boost">🚀</span><% } %></td>
+        <td class="r"><%= h.num(c.subscribers) %></td>
+        <td><% if (c.owner_id === user.id) { %><span class="badge ok">✔ вы владелец</span><% } else if (!c.owner_id) { %><a href="/c/<%= c.username %>/claim">Подтвердить</a><% } else { %>—<% } %></td>
+        <td class="r"><% if (c.owner_id === user.id) { %><a href="/account/channel/<%= c.id %>/edit">⚙️</a><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</section>
+
+<section>
+  <h2>Избранное</h2>
+  <% if (!favorites.length) { %><p class="muted">Нажмите «☆ В избранное» на странице канала, чтобы сохранить его здесь.</p><% } else { %>
+  <div class="grid"><% favorites.forEach((c) => { %><%- include('../partials/card', { c }) %><% }) %></div><% } %>
+</section>
+<%- include('../partials/footer') %>

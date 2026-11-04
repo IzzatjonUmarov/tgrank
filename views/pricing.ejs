@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+<div class="center-head">
+  <h1>Тарифы</h1>
+  <p class="muted">На этапе запуска <b>все функции бесплатны</b> для всех пользователей. Цены ниже — будущие, сейчас вы платите 0.</p>
+</div>
+<% const plans = [
+  { name: 'Базовый', future: '0', items: ['Добавление каналов, групп и ботов', 'Статистика и графики подписчиков', 'Голосование, отзывы, избранное', 'Подтверждение владения'] },
+  { name: 'Продвижение', future: '≈ 5 $ / день', hot: true, items: ['🚀 Блок «Продвигаемые» на главной', 'Поднятие вверх каталога и категории', 'Отметка PROMO в списках', `Раз в ${config.boostCooldownHours} ч. на ${config.boostHours} ч.`] },
+  { name: 'Pro / API', future: '≈ 15 $ / мес', items: ['Публичный JSON API без ключа', 'История подписчиков до 365 дней', 'Бейдж «Мы в рейтинге» для сайта', 'Приоритетная модерация'] },
+]; %>
+<div class="plans">
+  <% plans.forEach((p) => { %>
+  <div class="plan panel <%= p.hot ? 'plan-hot' : '' %>">
+    <h2><%= p.name %></h2>
+    <div class="price"><% if (config.freeMode) { %><b>0 ₽</b><% if (p.future !== '0') { %><s class="muted"><%= p.future %></s><% } %><% } else { %><b><%= p.future %></b><% } %></div>
+    <ul><% p.items.forEach((i) => { %><li>✔ <%= i %></li><% }) %></ul>
+    <a class="btn <%= p.hot ? 'btn-accent' : 'btn-primary' %> btn-block" href="/add"><%= config.freeMode ? 'Начать бесплатно' : 'Подключить' %></a>
+  </div>
+  <% }) %>
+</div>
+<p class="center muted small">Когда появятся платные тарифы, мы заранее предупредим. Всё, что вы сделали бесплатно, останется с вами.</p>
+<%- include('partials/footer') %>

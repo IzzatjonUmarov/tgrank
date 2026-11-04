@@ -1,0 +1,20 @@
+<%- include('../partials/header') %>
+<h1>Пользователи</h1>
+<%- include('_nav') %>
+<form class="inline-filters"><input name="q" value="<%= q %>" placeholder="Имя или email"><button class="btn btn-ghost btn-sm">Найти</button></form>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>ID</th><th>Имя</th><th>Email / Telegram</th><th>Роль</th><th class="r">Каналов</th><th>Регистрация</th><th></th></tr></thead>
+  <tbody>
+  <% users.forEach((u) => { %>
+    <tr class="<%= u.banned ? 'banned' : '' %>">
+      <td><%= u.id %></td><td><%= u.username %></td><td class="small"><%= u.email || (u.telegram_id ? 'tg:' + u.telegram_id : '') %></td>
+      <td><%= u.role %></td><td class="r"><%= u.added %></td><td class="small"><%= h.date(u.created_at) %></td>
+      <td class="actions"><% if (u.id !== user.id) { %>
+        <form method="post" action="/admin/users/<%= u.id %>/role"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="role" value="<%= u.role === 'admin' ? 'user' : 'admin' %>"><button class="btn btn-ghost btn-xs"><%= u.role === 'admin' ? 'Снять админа' : 'Сделать админом' %></button></form>
+        <form method="post" action="/admin/users/<%= u.id %>/ban"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs"><%= u.banned ? 'Разбанить' : 'Забанить' %></button></form>
+      <% } %></td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table></div>
+<%- include('../partials/footer') %>

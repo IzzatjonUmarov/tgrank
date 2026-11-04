@@ -1,0 +1,11 @@
+<%- include('../partials/header') %>
+<h1>Жалобы</h1>
+<%- include('_nav') %>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>Канал</th><th>Причина</th><th>От</th><th>Дата</th><th></th></tr></thead>
+  <tbody><% reports.forEach((r) => { %>
+    <tr class="<%= r.resolved ? 'muted' : '' %>"><td><a href="/c/<%= r.username %>">@<%= r.username %></a></td><td><%= r.reason %></td><td><%= r.reporter || '—' %></td><td class="small"><%= h.date(r.created_at) %></td>
+      <td><% if (!r.resolved) { %><form method="post" action="/admin/reports/<%= r.id %>/resolve"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-xs">Решено</button></form><% } else { %>✔<% } %></td></tr>
+  <% }) %><% if (!reports.length) { %><tr><td colspan="5" class="muted">Жалоб нет.</td></tr><% } %></tbody>
+</table></div>
+<%- include('../partials/footer') %>

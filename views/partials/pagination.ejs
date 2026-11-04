@@ -1,0 +1,10 @@
+<% if (result.pages > 1) { %>
+<nav class="pagination">
+  <% const from = Math.max(1, result.page - 3), to = Math.min(result.pages, result.page + 3); %>
+  <% if (result.page > 1) { %><a href="<%= h.qs(query, { page: result.page - 1 }) %>">←</a><% } %>
+  <% if (from > 1) { %><a href="<%= h.qs(query, { page: 1 }) %>">1</a><% if (from > 2) { %><span>…</span><% } %><% } %>
+  <% for (let p = from; p <= to; p++) { %><a class="<%= p === result.page ? 'active' : '' %>" href="<%= h.qs(query, { page: p }) %>"><%= p %></a><% } %>
+  <% if (to < result.pages) { %><% if (to < result.pages - 1) { %><span>…</span><% } %><a href="<%= h.qs(query, { page: result.pages }) %>"><%= result.pages %></a><% } %>
+  <% if (result.page < result.pages) { %><a href="<%= h.qs(query, { page: result.page + 1 }) %>">→</a><% } %>
+</nav>
+<% } %>

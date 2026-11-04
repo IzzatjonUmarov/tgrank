@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+<section class="hero">
+  <h1>Каталог и рейтинг Telegram-каналов, групп и ботов</h1>
+  <p class="muted">Ищите лучшие каналы, следите за ростом подписчиков, голосуйте и продвигайте свой канал — бесплатно.</p>
+  <form class="hero-search" action="/search">
+    <input name="q" placeholder="Например: новости, крипта, программирование…" autofocus>
+    <select name="type"><option value="">Все</option><option value="channel">Каналы</option><option value="group">Группы</option><option value="bot">Боты</option></select>
+    <button class="btn btn-primary">Найти</button>
+  </form>
+  <div class="hero-stats">
+    <div><b><%= h.num(stats.channels) %></b><span>каналов</span></div>
+    <div><b><%= h.num(stats.groups) %></b><span>групп</span></div>
+    <div><b><%= h.num(stats.bots) %></b><span>ботов</span></div>
+    <div><b><%= h.short(stats.audience) %></b><span>суммарная аудитория</span></div>
+  </div>
+</section>
+
+<% if (boosted.length) { %>
+<section>
+  <div class="section-head"><h2>🚀 Продвигаемые</h2><a href="/pricing">Как сюда попасть? — бесплатно</a></div>
+  <div class="grid"><% boosted.forEach((c) => { %><%- include('partials/card', { c }) %><% }) %></div>
+</section>
+<% } %>
+
+<div class="cols3">
+  <section class="panel"><div class="section-head"><h2>Топ каналов</h2><a href="/top?type=channel">Все →</a></div>
+    <% topChannels.forEach((c, i) => { %><%- include('partials/row', { c, pos: i + 1 }) %><% }) %><% if (!topChannels.length) { %><p class="muted">Пока пусто — <a href="/add">добавьте первый канал</a>.</p><% } %></section>
+  <section class="panel"><div class="section-head"><h2>Топ групп</h2><a href="/top?type=group">Все →</a></div>
+    <% topGroups.forEach((c, i) => { %><%- include('partials/row', { c, pos: i + 1 }) %><% }) %><% if (!topGroups.length) { %><p class="muted">Пока пусто.</p><% } %></section>
+  <section class="panel"><div class="section-head"><h2>Топ ботов</h2><a href="/top?type=bot">Все →</a></div>
+    <% topBots.forEach((c, i) => { %><%- include('partials/row', { c, pos: i + 1 }) %><% }) %><% if (!topBots.length) { %><p class="muted">Пока пусто.</p><% } %></section>
+</div>
+
+<section>
+  <div class="section-head"><h2>Категории</h2><a href="/catalog">Весь каталог →</a></div>
+  <div class="cats">
+    <% categories.forEach((cat) => { %>
+      <a class="cat" href="/category/<%= cat.slug %>"><span><%= cat.icon %></span><%= cat.name %><small><%= catCounts[cat.id] || 0 %></small></a>
+    <% }) %>
+  </div>
+</section>
+
+<div class="cols2">
+  <section class="panel"><div class="section-head"><h2>📈 Быстрее всех растут за неделю</h2><a href="/top?by=growth_week">Все →</a></div>
+    <% growing.forEach((c, i) => { %><%- include('partials/row', { c, pos: i + 1 }) %><% }) %></section>
+  <section class="panel"><div class="section-head"><h2>🆕 Новые в каталоге</h2><a href="/catalog?sort=new">Все →</a></div>
+    <% newest.forEach((c) => { %><%- include('partials/row', { c }) %><% }) %></section>
+</div>
+
+<section class="cta">
+  <h2>Есть свой канал, группа или бот?</h2>
+  <p>Добавьте его в каталог, подтвердите владение и поднимайте в «Продвигаемые» каждый день — на этапе запуска это бесплатно.</p>
+  <a class="btn btn-primary" href="/add">Добавить бесплатно</a>
+</section>
+<%- include('partials/footer') %>

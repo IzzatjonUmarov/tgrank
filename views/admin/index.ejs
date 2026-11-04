@@ -1,0 +1,19 @@
+<%- include('../partials/header') %>
+<h1>Админка</h1>
+<%- include('_nav') %>
+<div class="kpis">
+  <a class="kpi" href="/admin/channels?status=pending"><span>На модерации</span><b><%= counts.pending %></b></a>
+  <a class="kpi" href="/admin/channels?status=approved"><span>Опубликовано</span><b><%= counts.approved %></b></a>
+  <a class="kpi" href="/admin/channels?status=rejected"><span>Отклонено</span><b><%= counts.rejected %></b></a>
+  <a class="kpi" href="/admin/users"><span>Пользователи</span><b><%= counts.users %></b><small>+<%= counts.users_day %> за сутки</small></a>
+  <a class="kpi" href="/admin/reports"><span>Жалобы</span><b><%= counts.reports %></b></a>
+  <div class="kpi"><span>Продвигаются</span><b><%= counts.boosted %></b></div>
+  <div class="kpi"><span>Отзывы</span><b><%= counts.reviews %></b></div>
+  <div class="kpi"><span>Новых каналов</span><b><%= counts.channels_day %></b><small>за сутки</small></div>
+</div>
+<section class="panel">
+  <h2>Статистика</h2>
+  <p class="muted small">Подписчики обновляются автоматически каждые <%= config.statsIntervalHours %> ч. Можно запустить вручную:</p>
+  <form method="post" action="/admin/stats/update"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm">Обновить всё сейчас</button></form>
+</section>
+<%- include('../partials/footer') %>

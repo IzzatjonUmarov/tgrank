@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+<div class="narrow panel">
+  <h1>Добавить в каталог</h1>
+  <p class="muted">Каналы, группы и боты добавляются <b>бесплатно</b>. Название, аватар, описание и число подписчиков мы получаем из Telegram автоматически.</p>
+  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <form method="post" action="/add" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Ссылка или @username<input name="link" required value="<%= form.link || '' %>" placeholder="https://t.me/username"></label>
+    <label>Категория<select name="category_id" required><option value="">— выберите —</option><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= form.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
+    <label>Язык<select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= form.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+    <label>Теги через запятую <small class="muted">(необязательно)</small><input name="tags" value="<%= form.tags || '' %>" placeholder="новости, ташкент, it"></label>
+    <button class="btn btn-primary">Отправить на модерацию</button>
+  </form>
+  <p class="small muted">Не принимаем: приватные каналы, мошенничество, 18+, наркотики, накрутку. После одобрения подтвердите владение, чтобы продвигать канал.</p>
+</div>
+<%- include('partials/footer') %>

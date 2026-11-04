@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+<h1>🏆 Рейтинг Telegram: <%= h.TYPES_PLURAL[type].toLowerCase() %></h1>
+<div class="tabs">
+  <% for (const [k, v] of Object.entries(h.TYPES_PLURAL)) { %><a class="<%= type === k ? 'active' : '' %>" href="<%= h.qs(query, { type: k }) %>"><%= v %></a><% } %>
+</div>
+<div class="tabs tabs-sub">
+  <% for (const [k, v] of Object.entries(TOP_TABS)) { %><a class="<%= sort === k ? 'active' : '' %>" href="<%= h.qs(query, { by: k }) %>"><%= v %></a><% } %>
+</div>
+<form class="inline-filters" method="get">
+  <input type="hidden" name="type" value="<%= type %>"><input type="hidden" name="by" value="<%= sort %>">
+  <select name="category" onchange="this.form.submit()"><option value="">Все категории</option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= category === c.slug ? 'selected' : '' %>><%= c.name %></option><% }) %></select>
+  <select name="language" onchange="this.form.submit()"><option value="">Все языки</option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= language === k ? 'selected' : '' %>><%= v %></option><% } %></select>
+</form>
+<div class="panel table-wrap">
+<table class="table">
+  <thead><tr><th>#</th><th>Название</th><th class="r">Подписчики</th><th class="r">Сутки</th><th class="r">Неделя</th><th class="r">Месяц</th><th class="r hide-sm">Голоса</th><th class="r hide-sm">Оценка</th></tr></thead>
+  <tbody>
+  <% items.forEach((c, i) => { %>
+    <tr onclick="location.href='/c/<%= c.username %>'">
+      <td class="pos"><%= i + 1 %></td>
+      <td><a class="tcell" href="/c/<%= c.username %>"><%- include('partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted">@<%= c.username %><% if (c.category_name) { %> · <%= c.category_name %><% } %></small></span></a></td>
+      <td class="r"><b><%= h.num(c.subscribers) %></b></td>
+      <td class="r"><%- h.delta(c.growth_day) %></td>
+      <td class="r"><%- h.delta(c.growth_week) %></td>
+      <td class="r"><%- h.delta(c.growth_month) %></td>
+      <td class="r hide-sm"><%= c.votes %></td>
+      <td class="r hide-sm"><%= c.rating_count ? c.rating_avg.toFixed(1) : '—' %></td>
+    </tr>
+  <% }) %>
+  <% if (!items.length) { %><tr><td colspan="8" class="muted">Нет данных.</td></tr><% } %>
+  </tbody>
+</table>
+</div>
+<%- include('partials/footer') %>

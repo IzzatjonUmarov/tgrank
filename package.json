@@ -1,0 +1,22 @@
+{
+  "name": "tgrank",
+  "version": "0.1.0",
+  "description": "Каталог и рейтинг Telegram-каналов, групп и ботов (этап 1 — всё бесплатно)",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "seed": "node --no-warnings src/seed.js",
+    "update-stats": "node --no-warnings src/stats.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-session": "^2.1.1",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0"
+  }
+}

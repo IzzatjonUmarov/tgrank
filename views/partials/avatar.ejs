@@ -1,0 +1,1 @@
+<span class="ava <%= typeof size !== 'undefined' ? 'ava-' + size : '' %>" style="background:<%= h.avatarColor(c.username) %>"><%= h.initials(c.title) %><% if (c.avatar_url) { %><img src="<%= c.avatar_url %>" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"><% } %></span>

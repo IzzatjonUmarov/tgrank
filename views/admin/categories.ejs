@@ -1,0 +1,17 @@
+<%- include('../partials/header') %>
+<h1>Категории</h1>
+<%- include('_nav') %>
+<section class="panel">
+  <h3>Добавить / изменить (по slug)</h3>
+  <form method="post" action="/admin/categories" class="inline-filters"><input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input name="icon" placeholder="🙂" size="3"><input name="name" placeholder="Название" required><input name="slug" placeholder="slug-latin" required><input name="sort" type="number" placeholder="Порядок" style="width:90px">
+    <button class="btn btn-primary btn-sm">Сохранить</button></form>
+</section>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th></th><th>Название</th><th>Slug</th><th>Порядок</th><th class="r">Каналов</th><th></th></tr></thead>
+  <tbody><% cats.forEach((c) => { %>
+    <tr><td><%= c.icon %></td><td><%= c.name %></td><td><code><%= c.slug %></code></td><td><%= c.sort %></td><td class="r"><%= c.n %></td>
+      <td><form method="post" action="/admin/categories/<%= c.id %>/delete" onsubmit="return confirm('Удалить категорию? Каналы останутся без категории.')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs">🗑</button></form></td></tr>
+  <% }) %></tbody>
+</table></div>
+<%- include('../partials/footer') %>

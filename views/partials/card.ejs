@@ -1,0 +1,17 @@
+<a class="card <%= c.boosted ? 'card-boosted' : '' %>" href="/c/<%= c.username %>">
+  <div class="card-head">
+    <%- include('avatar', { c, size: 'md' }) %>
+    <div class="card-titles">
+      <div class="card-title"><%= c.title %><% if (c.tg_verified) { %> <span class="tick">✔</span><% } %></div>
+      <div class="muted small">@<%= c.username %></div>
+    </div>
+  </div>
+  <p class="card-desc"><%= (c.description || '').slice(0, 140) %></p>
+  <div class="card-foot">
+    <span title="Подписчики">👥 <b><%= h.short(c.subscribers) %></b></span>
+    <span title="Рост за неделю"><%- h.delta(c.growth_week) %> / нед.</span>
+    <span class="badge"><%= h.TYPES[c.type] %></span>
+    <% if (c.boosted) { %><span class="badge boost">🚀</span><% } %>
+    <% if (c.owner_id) { %><span class="badge ok" title="Владелец подтверждён">✔ владелец</span><% } %>
+  </div>
+</a>
