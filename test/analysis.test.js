@@ -2,6 +2,8 @@
 const os = require('os'); const DIR = require('fs').mkdtempSync(os.tmpdir() + '/tgrank-test-');
 process.env.DB_PATH = DIR + '/test.db';
 process.env.TME_INTERVAL_MS = '0';
+process.env.TELEGRAM_BOT_TOKEN = '123:TEST';
+process.env.TELEGRAM_BOT_USERNAME = 'tgrank_test_bot';
 
 const R = require('path').join(__dirname, '..', 'src') + '/';
 
@@ -31,7 +33,15 @@ const pages = {
   'https://t.me/+PrivAteHash12345': page('x', 'Закрытый клуб', '3 210 subscribers', 'Закрытый канал для подписчиков из Самарканда'),
   'https://t.me/someuser': page('someuser', 'Some User', '@someuser'),
 };
-global.fetch = async (url) => {
+global.fetch = async (url, opts = {}) => {
+  if (url.startsWith('https://api.telegram.org/')) {
+    const body = JSON.parse(opts.body || '{}');
+    const method = url.split('/').pop();
+    if (method === 'getChatMember') {
+      return { json: async () => (body.user_id === 777 ? { ok: true, result: { status: 'creator' } } : { ok: true, result: { status: 'member' } }) };
+    }
+    return { json: async () => ({ ok: false, description: 'not available in test' }) };
+  }
   const body = pages[url];
   return { ok: !!body || url.includes('/s/'), status: body ? 200 : 404, text: async () => body || '' };
 };
@@ -106,6 +116,17 @@ global.fetch = async (url) => {
   assert.equal(tg.parsePage('<meta property="og:title" content="Telegram: Contact @nobody">', 'nobody'), null);
   const pv = tg.parsePreview('<div class="tgme_channel_info_header_title"><span>Bakiroo</span></div><div class="tgme_channel_info_description">Biznes</div><span class="counter_value">5.4K</span> <span class="counter_type">subscribers</span>', 'the_bakiroo');
   assert.equal(pv.title, 'Bakiroo'); assert.equal(pv.subscribers, 5400);
+
+  // Подпись виджета Telegram: служебные параметры (next, link) не ломают проверку
+  const crypto = require('crypto');
+  const auth = { id: '777', first_name: 'Izzat', username: 'izzat', auth_date: String(Math.floor(Date.now() / 1000)) };
+  const check = Object.keys(auth).sort().map((k) => `${k}=${auth[k]}`).join('\n');
+  auth.hash = crypto.createHmac('sha256', crypto.createHash('sha256').update('123:TEST').digest()).update(check).digest('hex');
+  assert.ok(tg.checkTelegramAuth({ ...auth, next: '/account' }), 'подпись верна с лишним параметром');
+  assert.ok(!tg.checkTelegramAuth({ ...auth, id: '778' }), 'подделка id не проходит');
+  // Владение через бота
+  assert.equal(await tg.isChannelAdmin('goodchan', 777), true);
+  assert.equal(await tg.isChannelAdmin('goodchan', 778), false);
 
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);

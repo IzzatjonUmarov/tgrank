@@ -11,7 +11,10 @@
     <input type="hidden" name="ads_section" value="1">
     <fieldset class="ads-box" id="ads">
       <legend>💰 Реклама в канале</legend>
-      <% if (!channel.owner_id) { %>
+      <% if (channel.owner_id && channel.owner_id !== user.id) { %>
+        <p class="small muted">Цены на рекламу указывает только подтверждённый владелец канала.<% if (channel.ads_enabled) { %> Реклама сейчас включена — снимите галочку и сохраните, чтобы её выключить.<% } %></p>
+        <% if (channel.ads_enabled) { %><label class="check"><input type="checkbox" name="ads_enabled" value="1" checked disabled> Канал берёт рекламу</label><% } %>
+      <% } else if (!channel.owner_id) { %>
         <p class="small muted">Принимать рекламу может только канал с подтверждённым владельцем. <a href="/c/<%= channel.username %>/claim">Подтвердить владение →</a></p>
       <% } else { %>
       <label class="check"><input type="checkbox" name="ads_enabled" value="1" <%= channel.ads_enabled ? 'checked' : '' %>> Беру заказы на рекламу — показывать отметку «💰 Беру рекламу» и прайс</label>

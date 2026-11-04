@@ -4,6 +4,14 @@
   <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Выйти</button></form>
 </div>
 <p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · с <%= h.date(user.created_at) %> · <a href="/u/<%= user.id %>">мой профиль</a> <%- include('../partials/user-rating', { u: user }) %></p>
+<section class="panel tg-link">
+  <% if (user.telegram_id) { %>
+    <p>✅ Telegram привязан<% if (user.tg_username) { %>: <b>@<%= user.tg_username %></b><% } %>. Можно подтверждать владение каналами через бота.</p>
+  <% } else { %>
+    <p><b>Привяжите Telegram</b> — чтобы входить в один клик и подтверждать владение каналами через бота.</p>
+    <%- include('../partials/tg-login', { next: '/account' }) %>
+  <% } %>
+</section>
 <div class="actions"><a class="btn btn-ghost btn-sm" href="/messages">✉️ Сообщения</a><a class="btn btn-ghost btn-sm" href="/orders">📦 Заказы</a></div>
 
 <section class="panel">

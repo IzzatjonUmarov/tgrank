@@ -47,22 +47,40 @@ router.post('/register', (req, res) => {
 
 router.post('/logout', (req, res) => { req.session = null; res.redirect('/'); });
 
-// Вход через виджет Telegram (нужны TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME)
+// Вход через виджет Telegram (нужны TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME).
+// Если пользователь уже вошёл по email — Telegram привязывается к его аккаунту.
 router.get('/auth/telegram', (req, res) => {
   if (!checkTelegramAuth(req.query)) {
-    req.flash('error', 'Не удалось подтвердить вход через Telegram.');
+    req.flash('error', 'Не удалось подтвердить вход через Telegram. Попробуйте ещё раз.');
     return res.redirect('/login');
   }
   const tgId = Number(req.query.id);
-  let user = db.get('SELECT * FROM users WHERE telegram_id = ?', tgId);
+  const tgUsername = req.query.username || null;
+  const photo = /^https:\/\//.test(req.query.photo_url || '') ? req.query.photo_url : null;
+  const existing = db.get('SELECT * FROM users WHERE telegram_id = ?', tgId);
+
+  if (req.user) {
+    if (existing && existing.id !== req.user.id) {
+      req.flash('error', 'Этот Telegram уже привязан к другому аккаунту.');
+      return res.redirect('/account');
+    }
+    db.run('UPDATE users SET telegram_id = ?, tg_username = ?, photo_url = ? WHERE id = ?', tgId, tgUsername, photo, req.user.id);
+    req.flash('success', 'Telegram привязан к аккаунту.');
+    return res.redirect(safeNext(req.query.next) === '/' ? '/account' : safeNext(req.query.next));
+  }
+
+  let user = existing;
   if (!user) {
-    const name = req.query.username || [req.query.first_name, req.query.last_name].filter(Boolean).join(' ') || 'user' + tgId;
-    const { lastInsertRowid } = db.run('INSERT INTO users (username, telegram_id, role) VALUES (?, ?, ?)', name, tgId, roleFor(''));
+    const name = tgUsername || [req.query.first_name, req.query.last_name].filter(Boolean).join(' ').slice(0, 32) || 'user' + tgId;
+    const { lastInsertRowid } = db.run('INSERT INTO users (username, telegram_id, tg_username, photo_url, role) VALUES (?, ?, ?, ?, ?)',
+      name, tgId, tgUsername, photo, roleFor(''));
     user = db.get('SELECT * FROM users WHERE id = ?', lastInsertRowid);
+  } else {
+    db.run('UPDATE users SET tg_username = ?, photo_url = COALESCE(?, photo_url) WHERE id = ?', tgUsername, photo, user.id);
   }
   if (user.banned) { req.flash('error', 'Аккаунт заблокирован.'); return res.redirect('/login'); }
   req.session.uid = user.id;
-  res.redirect('/account');
+  res.redirect(safeNext(req.query.next) === '/' ? '/account' : safeNext(req.query.next));
 });
 
 module.exports = router;

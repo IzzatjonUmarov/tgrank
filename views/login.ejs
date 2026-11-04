@@ -1,6 +1,11 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
   <h1>Вход</h1>
+  <% if (config.botUsername && config.botToken) { %>
+    <p class="muted">Быстрее всего — через Telegram: один клик, без пароля. Так же проще подтвердить владение каналом.</p>
+    <%- include('partials/tg-login', { next }) %>
+    <div class="or">или по email</div>
+  <% } %>
   <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
   <form method="post" action="/login" class="form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
@@ -8,10 +13,6 @@
     <label>Пароль<input type="password" name="password" required autocomplete="current-password"></label>
     <button class="btn btn-primary">Войти</button>
   </form>
-  <% if (config.botUsername) { %>
-    <div class="or">или</div>
-    <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="<%= config.botUsername %>" data-size="large" data-auth-url="<%= config.baseUrl %>/auth/telegram" data-request-access="write"></script>
-  <% } %>
   <p class="muted">Нет аккаунта? <a href="/register">Зарегистрируйтесь</a> — это бесплатно.</p>
 </div>
 <%- include('partials/footer') %>

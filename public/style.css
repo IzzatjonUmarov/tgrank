@@ -261,3 +261,8 @@ pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
   .nav, .userbox, .search { display: none; width: 100%; }
   .nav-open .nav, .nav-open .userbox, .nav-open .search { display: flex; flex-wrap: wrap; }
 }
+
+.tg-login { margin: 8px 0 4px; min-height: 40px; }
+.claim-method { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+.claim-method h2 { font-size: 17px; }
+.tg-link p { margin: 0 0 6px; }

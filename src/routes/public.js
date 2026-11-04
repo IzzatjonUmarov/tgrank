@@ -3,7 +3,7 @@ const db = require('../db');
 const config = require('../config');
 const ch = require('../channels');
 const crypto = require('node:crypto');
-const { parseUsername, parseInvite, fetchChannelInfo, fetchInviteInfo } = require('../telegram');
+const { parseUsername, parseInvite, fetchChannelInfo, fetchInviteInfo, isChannelAdmin } = require('../telegram');
 const { isUzbekMarket } = require('../classify');
 const { requireUser } = require('./guards');
 const { TYPES, LANGUAGES } = require('../helpers');
@@ -198,12 +198,43 @@ router.post('/c/:username/boost', requireUser, (req, res) => {
   back(req, res, c);
 });
 
+// Владение подтверждено: черновик публикуется (узбекский рынок) или уходит модератору
+function confirmOwnership(req, c) {
+  db.run('UPDATE channels SET owner_id = ? WHERE id = ? AND owner_id IS NULL', req.user.id, c.id);
+  let msg = 'Владение подтверждено!';
+  if (c.status === 'draft') {
+    const fresh = db.get('SELECT is_uz FROM channels WHERE id = ?', c.id);
+    const next = req.user.role === 'admin' || config.region !== 'uz' || fresh.is_uz ? 'approved' : 'pending';
+    db.run(`UPDATE channels SET status = ?, approved_at = ${next === 'approved' ? "datetime('now')" : 'NULL'} WHERE id = ?`, next, c.id);
+    msg += next === 'approved' ? ' Канал опубликован в каталоге.' : ' Канал отправлен на модерацию: модератор проверит, что он для узбекского рынка.';
+  }
+  req.flash('success', msg + ' Теперь вы можете указать цены на рекламу в настройках канала.');
+}
+
+// Подтверждение через бота: пользователь вошёл через Telegram, бот добавлен админом канала
+router.post('/c/:username/verify-bot', requireUser, async (req, res, next) => {
+  try {
+    const c = ch.byUsername(req.params.username);
+    if (!c || c.owner_id) return res.redirect(c ? `/c/${c.username}` : '/');
+    const fail = (msg) => { req.flash('error', msg); res.redirect(`/c/${c.username}/claim`); };
+    if (c.is_private || c.type === 'bot') return fail('Для этого канала используйте подтверждение кодом в описании.');
+    if (!req.user.telegram_id) return fail('Сначала войдите через Telegram или привяжите Telegram к аккаунту.');
+    let ok;
+    try { ok = await isChannelAdmin(c.username, req.user.telegram_id); } catch (e) {
+      return fail(`Бот не смог проверить канал: ${e.message}. Убедитесь, что @${config.botUsername} добавлен в администраторы канала.`);
+    }
+    if (!ok) return fail('Ваш Telegram не числится создателем или администратором этого канала.');
+    confirmOwnership(req, c);
+    res.redirect(`/c/${c.username}`);
+  } catch (e) { next(e); }
+});
+
 // Подтверждение владения: персональный код пользователя в описании канала
 router.get('/c/:username/claim', requireUser, (req, res) => {
   const c = ch.byUsername(req.params.username);
   if (!c) return res.redirect('/');
   if (c.owner_id) { req.flash('info', 'Владелец канала уже подтверждён.'); return back(req, res, c); }
-  res.render('claim', { title: 'Подтверждение владения', channel: c, code: ch.verifyCode(c.id, req.user.id) });
+  res.render('claim', { title: 'Подтверждение владения', channel: c, code: ch.verifyCode(c.id, req.user.id), botMethod: !!config.botToken && !c.is_private && c.type !== 'bot' });
 });
 
 router.post('/c/:username/verify', requireUser, async (req, res, next) => {
@@ -213,12 +244,7 @@ router.post('/c/:username/verify', requireUser, async (req, res, next) => {
     const code = ch.verifyCode(c.id, req.user.id);
     const info = await fetchProfile(c, { priority: 'high' }).catch(() => null);
     if (info && info.description.includes(code)) {
-      db.run('UPDATE channels SET owner_id = ? WHERE id = ? AND owner_id IS NULL', req.user.id, c.id);
-      if (c.status === 'draft') {
-        const next = req.user.role === 'admin' ? 'approved' : 'pending';
-        db.run(`UPDATE channels SET status = ?, approved_at = ${next === 'approved' ? "datetime('now')" : 'NULL'} WHERE id = ?`, next, c.id);
-      }
-      req.flash('success', c.status === 'draft' ? 'Владение подтверждено! Канал отправлен на модерацию. Код из описания можно удалить.' : 'Владение подтверждено! Код из описания можно удалить.');
+      confirmOwnership(req, c);
       return res.redirect(`/c/${c.username}`);
     }
     req.flash('error', info ? 'Код не найден в описании. Telegram обновляет страницу с задержкой — попробуйте через минуту.' : 'Не удалось получить данные канала из Telegram.');
@@ -248,8 +274,8 @@ router.post('/add', requireUser, async (req, res, next) => {
     if (invite) {
       const existing = db.get('SELECT username FROM channels WHERE invite_link = ?', invite);
       if (existing) return fail('Этот частный канал уже добавлен.');
-      if (!form.consent) return fail('Подтвердите, что вы владелец канала и согласны опубликовать ссылку-приглашение в каталоге.');
     }
+    if (req.user.role !== 'admin' && !form.consent) return fail('Подтвердите, что вы владелец канала: добавлять каналы могут только их владельцы.');
     if (!form.category_id || !db.get('SELECT 1 FROM categories WHERE id = ?', form.category_id)) return fail('Выберите категорию.');
 
     const pending = db.get(`SELECT COUNT(*) AS n FROM channels WHERE added_by = ? AND status IN ('pending', 'draft')`, req.user.id).n;
@@ -267,8 +293,8 @@ router.post('/add', requireUser, async (req, res, next) => {
 
     const isAdmin = req.user.role === 'admin';
     const uz = isAdmin || isUzbekMarket(info).ok;
-    // Частный канал публикуется только после подтверждения владельца (статус draft до проверки кода)
-    const status = invite ? 'draft' : isAdmin ? 'approved' : 'pending';
+    // Без подтверждения добавляет только админ. Остальные — черновик до подтверждения владения
+    const status = isAdmin && !invite ? 'approved' : 'draft';
     const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, tags, subscribers, tg_verified, status, added_by, is_uz, is_private, invite_link, last_checked_at, approved_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
       slug, info.type, info.title, info.description, info.avatar_url, form.category_id, form.language, form.tags, info.subscribers, info.tg_verified,
@@ -278,8 +304,8 @@ router.post('/add', requireUser, async (req, res, next) => {
     if (info.type === 'channel' && !invite) await syncPosts(id, username, HIGH).catch(() => {});
     analyze(id);
 
-    if (invite) {
-      req.flash('info', 'Канал сохранён как черновик. Подтвердите, что вы владелец, — после этого он уйдёт на модерацию.');
+    if (status === 'draft') {
+      req.flash('info', 'Канал сохранён как черновик и пока никому не виден. Подтвердите, что вы владелец, — после этого он появится в каталоге.');
       return res.redirect(`/c/${slug}/claim`);
     }
     req.flash('success', status === 'approved' ? 'Канал добавлен.' : 'Канал отправлен на модерацию. Обычно проверка занимает до 24 часов.' +

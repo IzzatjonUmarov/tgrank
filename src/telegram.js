@@ -188,9 +188,13 @@ async function fetchChannelInfo(username, opts = {}) {
 }
 
 // Проверка данных виджета "Войти через Telegram"
+const TG_AUTH_FIELDS = ['id', 'first_name', 'last_name', 'username', 'photo_url', 'auth_date'];
+
 function checkTelegramAuth(data) {
   if (!config.botToken || !data || !data.hash) return false;
-  const { hash, ...rest } = data;
+  const hash = String(data.hash);
+  // Подписываются только поля виджета: служебные параметры вроде ?link=1 в проверку не входят
+  const rest = Object.fromEntries(TG_AUTH_FIELDS.filter((k) => data[k] !== undefined).map((k) => [k, data[k]]));
   const checkString = Object.keys(rest).sort().map((k) => `${k}=${rest[k]}`).join('\n');
   const secret = crypto.createHash('sha256').update(config.botToken).digest();
   const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
@@ -245,4 +249,11 @@ async function fetchPosts(username, before = null, opts = {}) {
   return { subscribers, posts, mentions: found, text: texts.join('\n').slice(0, 20000) };
 }
 
-module.exports = { tmeGet, queueSize, parsePage, parsePreview, parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };
+// Является ли пользователь Telegram создателем или админом канала (бот должен быть админом канала)
+async function isChannelAdmin(username, telegramId) {
+  if (!config.botToken) throw new Error('Бот не настроен');
+  const m = await botApi('getChatMember', { chat_id: '@' + username, user_id: telegramId });
+  return m.status === 'creator' || m.status === 'administrator';
+}
+
+module.exports = { isChannelAdmin, tmeGet, queueSize, parsePage, parsePreview, parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };

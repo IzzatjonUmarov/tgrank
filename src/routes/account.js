@@ -53,7 +53,13 @@ router.post('/channel/:id/edit', (req, res) => {
     }
   }
   // Реклама: включить может только подтверждённый владелец
-  if (req.body.ads_section === '1') {
+  // Админ может только выключить рекламу чужого канала, но не задать цены
+  if (req.body.ads_section === '1' && c.owner_id !== req.user.id && req.body.ads_enabled !== '1') {
+    db.run('UPDATE channels SET ads_enabled = 0 WHERE id = ?', c.id);
+  } else if (req.body.ads_section === '1' && c.owner_id !== req.user.id) {
+    req.flash('error', 'Цены на рекламу может указывать только подтверждённый владелец канала.');
+    return res.redirect(`/account/channel/${c.id}/edit`);
+  } else if (req.body.ads_section === '1') {
     const enabled = req.body.ads_enabled === '1';
     const currency = ads.CURRENCIES[req.body.ad_currency] ? req.body.ad_currency : 'UZS';
     const prices = ads.parsePrices(req.body);

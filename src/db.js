@@ -193,6 +193,8 @@ addColumn('users', 'rating_avg', 'REAL NOT NULL DEFAULT 0');
 addColumn('users', 'rating_count', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'orders_done', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'about', "TEXT NOT NULL DEFAULT ''");
+addColumn('users', 'tg_username', 'TEXT');
+addColumn('users', 'photo_url', 'TEXT');
 addColumn('stats', 'avg_reach', 'INTEGER');
 addColumn('stats', 'err', 'REAL');
 

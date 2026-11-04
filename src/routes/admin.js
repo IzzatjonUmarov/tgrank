@@ -41,8 +41,9 @@ router.get('/channels', (req, res) => {
 const goBack = (req, res) => res.redirect(req.get('referer') || '/admin/channels');
 
 router.post('/channels/:id/approve', (req, res) => {
-  const c = db.get('SELECT is_private, owner_id FROM channels WHERE id = ?', Number(req.params.id));
+  const c = db.get('SELECT is_private, owner_id, status FROM channels WHERE id = ?', Number(req.params.id));
   if (c && c.is_private && !c.owner_id) { req.flash('error', 'Частный канал можно одобрить только после подтверждения владельца.'); return goBack(req, res); }
+  if (c && c.status === 'draft' && !c.owner_id) { req.flash('error', 'Черновик можно одобрить только после того, как пользователь подтвердит владение.'); return goBack(req, res); }
   db.run(`UPDATE channels SET status = 'approved', reject_reason = NULL, approved_at = COALESCE(approved_at, datetime('now')) WHERE id = ?`, Number(req.params.id));
   goBack(req, res);
 });
