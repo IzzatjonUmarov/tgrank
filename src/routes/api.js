@@ -3,6 +3,7 @@ const express = require('express');
 const db = require('../db');
 const ch = require('../channels');
 const { tgLink } = require('../helpers');
+const { cpm } = require('../ads');
 
 const router = express.Router();
 router.use((req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); });
@@ -13,6 +14,7 @@ const pub = (c) => ({
   growth: { day: c.growth_day, week: c.growth_week, month: c.growth_month },
   votes: c.votes, rating: Number(c.rating_avg.toFixed(2)), reviews: c.rating_count,
   avg_reach: c.avg_reach, err: c.err, posts_per_day: c.posts_per_day, engagement: c.engagement,
+  ads: c.ads_enabled && c.owner_id ? { currency: c.ad_currency, prices: JSON.parse(c.ad_prices || '[]'), contact: c.ad_contact, note: c.ad_note || null, cpm_uzs: cpm(c) } : null,
   fraud: { score: c.fraud_score, reasons: JSON.parse(c.fraud_reasons || '[]').map((r) => r.text) },
   owner_verified: !!c.owner_id, boosted: !!c.boosted,
 });

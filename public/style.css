@@ -215,3 +215,15 @@ pre.code { overflow-x: auto; font-size: 13px; }
 .form .check input { display: inline-block; width: auto; margin: 3px 0 0; flex: none; }
 .dl-left dd { text-align: left; overflow-wrap: anywhere; }
 pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Реклама */
+.badge.ads { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+.ads-box { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin: 0 0 14px; }
+.ads-box legend { font-weight: 700; padding: 0 6px; }
+.price-row { display: grid; grid-template-columns: 1fr 140px; gap: 8px; margin: 6px 0; }
+.price-row input { width: 100%; }
+.ads-panel { border-color: var(--ok); }
+.price-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.price-table td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.ad-note { white-space: pre-line; overflow-wrap: anywhere; }
+.ads-panel .btn { white-space: normal; text-align: center; overflow-wrap: anywhere; }

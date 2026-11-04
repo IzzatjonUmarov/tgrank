@@ -16,8 +16,10 @@
       <div class="two"><label>Подписчиков от<input name="min" type="number" min="0" value="<%= f.minSubs %>"></label><label>до<input name="max" type="number" min="0" value="<%= f.maxSubs %>"></label></div>
       <label class="check"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Только с подтверждённым владельцем</label>
       <label class="check"><input type="checkbox" name="clean" value="1" <%= f.clean ? 'checked' : '' %>> Без подозрений на накрутку</label>
+      <% if (baseUrl !== '/ads') { %><label class="check"><input type="checkbox" name="ads" value="1" <%= f.ads ? 'checked' : '' %>> 💰 Берут рекламу</label><% } %>
+      <% if (f.ads) { %><label>Цена рекламы до, сум<input name="max_price" type="number" min="0" step="1000" value="<%= f.maxPrice || '' %>"></label><% } %>
       <label>Сортировка<select name="sort">
-        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', reach: 'Охват поста', err: 'ERR', new: 'Новые', views: 'Просмотры на сайте' }; %>
+        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', reach: 'Охват поста', err: 'ERR', price: 'Цена рекламы', cpm: 'CPM (цена за 1000 просмотров)', new: 'Новые', views: 'Просмотры на сайте' }; %>
         <% for (const [k, v] of Object.entries(sorts)) { %><option value="<%= k %>" <%= f.sort === k ? 'selected' : '' %>><%= v %></option><% } %>
       </select></label>
       <button class="btn btn-primary btn-block">Применить</button>

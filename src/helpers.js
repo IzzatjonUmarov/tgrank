@@ -50,4 +50,6 @@ function tgLink(c) {
   return c.is_private ? c.invite_link : `https://t.me/${c.username}`;
 }
 
-module.exports = { handle, tgLink, num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };
+const ads = require('./ads');
+
+module.exports = { ads, handle, tgLink, num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };

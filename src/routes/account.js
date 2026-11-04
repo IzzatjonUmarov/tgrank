@@ -4,6 +4,7 @@ const ch = require('../channels');
 const { requireUser } = require('./guards');
 const { LANGUAGES } = require('../helpers');
 const { parseInvite } = require('../telegram');
+const ads = require('../ads');
 
 const router = express.Router();
 router.use(requireUser);
@@ -30,7 +31,7 @@ function ownChannel(req, res) {
 
 router.get('/channel/:id/edit', (req, res) => {
   const c = ownChannel(req, res); if (!c) return;
-  res.render('account/edit', { title: 'Настройки канала', channel: c });
+  res.render('account/edit', { title: 'Настройки канала', channel: c, adPrices: JSON.parse(c.ad_prices || '[]'), FORMATS: ads.FORMATS, CURRENCIES: ads.CURRENCIES });
 });
 
 router.post('/channel/:id/edit', (req, res) => {
@@ -50,6 +51,20 @@ router.post('/channel/:id/edit', (req, res) => {
       req.flash('info', 'Ссылка обновлена. Подтвердите владение заново — после этого канал вернётся в каталог.');
       return res.redirect(`/c/${c.username}/claim`);
     }
+  }
+  // Реклама: включить может только подтверждённый владелец
+  if (req.body.ads_section === '1') {
+    const enabled = req.body.ads_enabled === '1';
+    const currency = ads.CURRENCIES[req.body.ad_currency] ? req.body.ad_currency : 'UZS';
+    const prices = ads.parsePrices(req.body);
+    const contact = ads.parseContact(req.body.ad_contact);
+    const note = String(req.body.ad_note || '').trim().slice(0, 1000);
+    const back = () => res.redirect(`/account/channel/${c.id}/edit`);
+    if (enabled && !c.owner_id) { req.flash('error', 'Принимать рекламу может только канал с подтверждённым владельцем.'); return back(); }
+    if (enabled && !contact) { req.flash('error', 'Укажите контакт для связи по рекламе: @username или ссылку t.me.'); return back(); }
+    if (enabled && !prices.length && !note) { req.flash('error', 'Укажите хотя бы одну цену или условия, например «цена договорная».'); return back(); }
+    db.run(`UPDATE channels SET ads_enabled = ?, ad_currency = ?, ad_prices = ?, ad_min_price_uzs = ?, ad_contact = ?, ad_note = ?, ad_updated_at = datetime('now') WHERE id = ?`,
+      enabled ? 1 : 0, currency, JSON.stringify(prices), ads.minPriceUzs(prices, currency), contact, note, c.id);
   }
   req.flash('success', 'Изменения сохранены.');
   res.redirect(`/c/${c.username}`);

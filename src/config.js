@@ -42,4 +42,6 @@ Object.assign(module.exports, {
 Object.assign(module.exports, {
   // Регион каталога: uz — только каналы для узбекского рынка; all — без ограничений
   region: process.env.REGION || 'uz',
+  // Курс для сравнения цен на рекламу в долларах и сумах (сортировка, CPM)
+  usdUzs: Number(process.env.USD_UZS || 12800),
 });

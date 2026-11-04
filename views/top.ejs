@@ -19,7 +19,7 @@
   <% items.forEach((c, i) => { %>
     <tr onclick="location.href='/c/<%= c.username %>'">
       <td class="pos"><%= i + 1 %></td>
-      <td><a class="tcell" href="/c/<%= c.username %>"><%- include('partials/avatar', { c }) %><span><b><%= c.title %></b><% if (c.fraud_score >= 25) { %> <span class="badge warn" title="Подозрение на накрутку">⚠️</span><% } %><br><small class="muted"><%= h.handle(c) %><% if (c.category_name) { %> · <%= c.category_name %><% } %></small></span></a></td>
+      <td><a class="tcell" href="/c/<%= c.username %>"><%- include('partials/avatar', { c }) %><span><b><%= c.title %></b><% if (c.fraud_score >= 25) { %> <span class="badge warn" title="Подозрение на накрутку">⚠️</span><% } %><% if (c.ads_enabled && c.owner_id) { %> <span class="badge ads" title="Берёт рекламу">💰</span><% } %><br><small class="muted"><%= h.handle(c) %><% if (c.category_name) { %> · <%= c.category_name %><% } %></small></span></a></td>
       <td class="r"><b><%= h.num(c.subscribers) %></b></td>
       <td class="r"><%- h.delta(c.growth_day) %></td>
       <td class="r"><%- h.delta(c.growth_week) %></td>

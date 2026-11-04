@@ -7,6 +7,28 @@
     <label>Язык<select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= channel.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
     <label>Теги<input name="tags" value="<%= channel.tags %>"></label>
     <% if (channel.is_private) { %><label>Ссылка-приглашение <small class="muted">— обновите, если старая перестала работать</small><input name="invite_link" value="<%= channel.invite_link %>"></label><% } %>
+
+    <input type="hidden" name="ads_section" value="1">
+    <fieldset class="ads-box" id="ads">
+      <legend>💰 Реклама в канале</legend>
+      <% if (!channel.owner_id) { %>
+        <p class="small muted">Принимать рекламу может только канал с подтверждённым владельцем. <a href="/c/<%= channel.username %>/claim">Подтвердить владение →</a></p>
+      <% } else { %>
+      <label class="check"><input type="checkbox" name="ads_enabled" value="1" <%= channel.ads_enabled ? 'checked' : '' %>> Беру заказы на рекламу — показывать отметку «💰 Беру рекламу» и прайс</label>
+      <label>Контакт для рекламодателей <small class="muted">— @username или ссылка t.me</small><input name="ad_contact" value="<%= channel.ad_contact || '' %>" placeholder="@manager_username"></label>
+      <label>Валюта<select name="ad_currency"><% for (const [k, v] of Object.entries(CURRENCIES)) { %><option value="<%= k %>" <%= channel.ad_currency === k ? 'selected' : '' %>><%= k %> (<%= v %>)</option><% } %></select></label>
+      <div class="small"><b>Прайс</b> <span class="muted">— формат и цена; пустые строки не сохраняются</span></div>
+      <datalist id="ad-formats"><% FORMATS.forEach((f) => { %><option value="<%= f %>"><% }) %></datalist>
+      <% const rows = adPrices.concat(Array(Math.max(1, 5 - adPrices.length)).fill({ format: '', price: '' })).slice(0, 8); %>
+      <% rows.forEach((p, i) => { %>
+        <div class="price-row">
+          <input name="ad_format" list="ad-formats" value="<%= p.format %>" placeholder="<%= i === 0 ? '1/24' : i === 1 ? '2/48' : 'Формат' %>" maxlength="40">
+          <input name="ad_price" inputmode="numeric" value="<%= p.price %>" placeholder="Цена">
+        </div>
+      <% }) %>
+      <label>Условия <small class="muted">— скидки, тематики, которые не берёте, «цена договорная»</small><textarea name="ad_note" rows="3" maxlength="1000"><%= channel.ad_note || '' %></textarea></label>
+      <% } %>
+    </fieldset>
     <button class="btn btn-primary">Сохранить</button>
   </form>
   <form method="post" action="/account/channel/<%= channel.id %>/delete" onsubmit="return confirm('Удалить канал из каталога вместе со статистикой?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Удалить из каталога</button></form>

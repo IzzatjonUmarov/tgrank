@@ -43,6 +43,8 @@ function renderCatalog(req, res, preset = {}) {
     maxSubs: req.query.max || '',
     verified: req.query.verified === '1',
     clean: req.query.clean === '1',
+    ads: req.query.ads === '1',
+    maxPrice: parseInt(req.query.max_price, 10) || '',
     sort: ch.SORTS[req.query.sort] ? req.query.sort : 'popular',
     page: Math.max(1, parseInt(req.query.page, 10) || 1),
     ...preset,
@@ -50,7 +52,7 @@ function renderCatalog(req, res, preset = {}) {
   const result = ch.list(f);
   const category = f.category ? db.get('SELECT * FROM categories WHERE slug = ?', f.category) : null;
   if (f.category && !category) return res.status(404).render('error', { title: 'Не найдено', message: 'Категория не найдена.' });
-  const title = category ? `${category.name} — Telegram` : f.type ? `${require('../helpers').TYPES_PLURAL[f.type]} Telegram` : f.q ? `Поиск: ${f.q}` : 'Каталог Telegram';
+  const title = req.path === '/ads' ? '💰 Реклама в Telegram-каналах' : category ? `${category.name} — Telegram` : f.type ? `${require('../helpers').TYPES_PLURAL[f.type]} Telegram` : f.q ? `Поиск: ${f.q}` : 'Каталог Telegram';
   res.render('catalog', { title, f, result, category, baseUrl: req.baseUrl + req.path });
 }
 
@@ -59,6 +61,7 @@ router.get('/search', (req, res) => renderCatalog(req, res));
 router.get('/channels', (req, res) => renderCatalog(req, res, { type: 'channel' }));
 router.get('/groups', (req, res) => renderCatalog(req, res, { type: 'group' }));
 router.get('/bots', (req, res) => renderCatalog(req, res, { type: 'bot' }));
+router.get('/ads', (req, res) => renderCatalog(req, res, { ads: true, sort: ch.SORTS[req.query.sort] ? req.query.sort : 'cpm' }));
 router.get('/category/:slug', (req, res) => renderCatalog(req, res, { category: req.params.slug }));
 
 const TOP_TABS = {

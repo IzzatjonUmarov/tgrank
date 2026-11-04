@@ -59,7 +59,7 @@ router.post('/channels/:id/unboost', (req, res) => {
   goBack(req, res);
 });
 router.post('/channels/:id/reset-owner', (req, res) => {
-  db.run('UPDATE channels SET owner_id = NULL WHERE id = ?', Number(req.params.id));
+  db.run('UPDATE channels SET owner_id = NULL, ads_enabled = 0 WHERE id = ?', Number(req.params.id));
   goBack(req, res);
 });
 router.post('/channels/:id/category', (req, res) => {

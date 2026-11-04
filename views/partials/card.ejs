@@ -14,6 +14,7 @@
     <% if (c.boosted) { %><span class="badge boost">🚀</span><% } %>
     <% if (c.err != null) { %><span title="ERR — охват поста к подписчикам">ERR <b><%= c.err %>%</b></span><% } %>
     <% if (c.fraud_score >= 25) { %><span class="badge warn" title="Подозрение на накрутку">⚠️ накрутка?</span><% } %>
+    <% if (c.ads_enabled && c.owner_id) { %><span class="badge ads" title="Берёт рекламу">💰 реклама<% if (c.ad_min_price_uzs) { %> от <%= h.short(c.ad_min_price_uzs) %> сум<% } %></span><% } %>
     <% if (c.owner_id) { %><span class="badge ok" title="Владелец подтверждён">✔ владелец</span><% } %>
   </div>
 </a>

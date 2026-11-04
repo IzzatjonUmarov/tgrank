@@ -135,6 +135,13 @@ addColumn('channels', 'crawl_before', 'INTEGER');
 addColumn('channels', 'crawl_pages', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('channels', 'crawl_done', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('channels', 'crawled_at', 'TEXT');
+addColumn('channels', 'ads_enabled', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('channels', 'ad_currency', "TEXT NOT NULL DEFAULT 'UZS'");
+addColumn('channels', 'ad_prices', "TEXT NOT NULL DEFAULT '[]'");
+addColumn('channels', 'ad_min_price_uzs', 'INTEGER');
+addColumn('channels', 'ad_contact', 'TEXT');
+addColumn('channels', 'ad_note', 'TEXT');
+addColumn('channels', 'ad_updated_at', 'TEXT');
 addColumn('stats', 'avg_reach', 'INTEGER');
 addColumn('stats', 'err', 'REAL');
 

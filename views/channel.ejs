@@ -120,12 +120,26 @@
   </div>
 
   <aside>
+    <% if (channel.ads_enabled && channel.owner_id) { const prices = JSON.parse(channel.ad_prices || '[]'), cpm = h.ads.cpm(channel); %>
+    <section class="panel ads-panel" id="ads">
+      <h3>💰 Беру рекламу</h3>
+      <% if (prices.length) { %>
+        <table class="price-table"><% prices.forEach((p) => { %><tr><td><%= p.format %></td><td class="r"><b><%= h.ads.fmtPrice(p.price, channel.ad_currency) %></b></td></tr><% }) %></table>
+      <% } %>
+      <% if (cpm) { %><p class="small muted" title="Цена самого дешёвого формата за 1000 просмотров по среднему охвату поста">CPM ≈ <b><%= h.num(cpm) %> сум</b> за 1000 просмотров</p><% } %>
+      <% if (channel.ad_note) { %><p class="small ad-note"><%= channel.ad_note %></p><% } %>
+      <% if (channel.fraud_score >= 25) { %><p class="small risk-medium">⚠️ У канала есть признаки накрутки — проверьте охваты перед покупкой.</p><% } %>
+      <a class="btn btn-accent btn-block" href="https://t.me/<%= channel.ad_contact.slice(1) %>" target="_blank" rel="noopener nofollow">Написать по рекламе <%= channel.ad_contact %></a>
+      <p class="small muted">Цены указывает владелец канала. Сделка проходит напрямую между вами и владельцем.</p>
+    </section>
+    <% } %>
     <section class="panel">
       <h3>Владельцу</h3>
       <% if (isOwner || (user && user.role === 'admin')) { %>
         <p class="small muted">Поднимите канал в блок «Продвигаемые» на главной и вверх каталога на <%= config.boostHours %> ч. Раз в сутки — <b>бесплатно</b>.</p>
         <form method="post" action="/c/<%= channel.username %>/boost"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent btn-block" <%= canBoost ? '' : 'disabled' %>>🚀 <%= canBoost ? 'Продвинуть бесплатно' : 'Доступно позже' %></button></form>
         <a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit">⚙️ Настройки</a>
+        <% if (!channel.ads_enabled) { %><a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit#ads">💰 Принимать рекламу</a><% } %>
         <div class="widget">
           <p class="small muted">Бейдж для сайта или поста:</p>
           <code class="copy" data-copy='<a href="<%= config.baseUrl %>/c/<%= channel.username %>">Мы в рейтинге <%= config.siteName %></a>'>&lt;a href="<%= config.baseUrl %>/c/<%= channel.username %>"&gt;…</code>
