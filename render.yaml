@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: tgrank
+    runtime: node
+    plan: free
+    buildCommand: npm ci && node --no-warnings src/seed.js
+    startCommand: node --no-warnings server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FREE_MODE
+        value: "true"
+      - key: BASE_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_BOT_USERNAME
+        sync: false
