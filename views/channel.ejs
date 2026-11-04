@@ -129,7 +129,12 @@
       <% if (cpm) { %><p class="small muted" title="Цена самого дешёвого формата за 1000 просмотров по среднему охвату поста">CPM ≈ <b><%= h.num(cpm) %> сум</b> за 1000 просмотров</p><% } %>
       <% if (channel.ad_note) { %><p class="small ad-note"><%= channel.ad_note %></p><% } %>
       <% if (channel.fraud_score >= 25) { %><p class="small risk-medium">⚠️ У канала есть признаки накрутки — проверьте охваты перед покупкой.</p><% } %>
-      <a class="btn btn-accent btn-block" href="https://t.me/<%= channel.ad_contact.slice(1) %>" target="_blank" rel="noopener nofollow">Написать по рекламе <%= channel.ad_contact %></a>
+      <% if (owner) { %><p class="small owner-line">Владелец: <a href="/u/<%= owner.id %>"><b><%= owner.username %></b></a> <%- include('partials/user-rating', { u: owner }) %></p><% } %>
+      <% if (!user || user.id !== channel.owner_id) { %>
+        <a class="btn btn-primary btn-block" href="/orders/new?channel=<%= channel.id %>">📦 Заказать рекламу</a>
+        <a class="btn btn-ghost btn-block" href="/messages/with/<%= channel.owner_id %>?channel=<%= channel.id %>">✉️ Написать владельцу на сайте</a>
+      <% } %>
+      <a class="btn btn-ghost btn-block" href="https://t.me/<%= channel.ad_contact.slice(1) %>" target="_blank" rel="noopener nofollow">Telegram: <%= channel.ad_contact %></a>
       <p class="small muted">Цены указывает владелец канала. Сделка проходит напрямую между вами и владельцем.</p>
     </section>
     <% } %>
@@ -148,7 +153,8 @@
         <p class="small muted">Это ваш канал? Подтвердите владение, чтобы управлять карточкой и бесплатно продвигать его.</p>
         <a class="btn btn-ghost btn-block" href="/c/<%= channel.username %>/claim">Я владелец</a>
       <% } else { %>
-        <p class="small muted">Владелец канала подтверждён.</p>
+        <p class="small muted">Владелец канала подтверждён<% if (owner) { %>: <a href="/u/<%= owner.id %>"><%= owner.username %></a> <%- include('partials/user-rating', { u: owner }) %><% } %>.</p>
+        <% if (owner && (!user || user.id !== owner.id)) { %><a class="btn btn-ghost btn-block" href="/messages/with/<%= owner.id %>?channel=<%= channel.id %>">✉️ Написать владельцу</a><% } %>
       <% } %>
     </section>
     <section class="panel">

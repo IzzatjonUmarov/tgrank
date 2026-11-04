@@ -115,6 +115,7 @@ router.get('/c/:username', (req, res) => {
     deltas: dailyDeltas(ch.history(channel.id, 31)).map((d) => ({ date: d.date, delta: Math.round(d.delta) })),
     reachHistory: db.all(`SELECT date, avg_reach, err FROM stats WHERE channel_id = ? AND avg_reach IS NOT NULL ORDER BY date DESC LIMIT 90`, channel.id).reverse(),
     canRefresh: canRefresh(channel),
+    owner: channel.owner_id ? db.get('SELECT id, username, rating_avg, rating_count, orders_done FROM users WHERE id = ?', channel.owner_id) : null,
   });
 });
 

@@ -1,0 +1,18 @@
+<%- include('../partials/header') %>
+<h1>✉️ Сообщения</h1>
+<% if (!convs.length) { %>
+  <div class="panel empty"><p class="muted">Переписок пока нет. Написать можно владельцу канала со страницы канала или любому пользователю из его профиля.</p></div>
+<% } else { %>
+<div class="panel inbox" style="padding:0">
+  <% convs.forEach((c) => { %>
+    <a href="/messages/<%= c.id %>">
+      <span class="ava" style="background:<%= h.avatarColor(c.other_name) %>"><%= h.initials(c.other_name) %></span>
+      <span class="main"><b><%= c.other_name %></b> <%- include('../partials/user-rating', { u: { rating_avg: c.other_rating, rating_count: c.other_rating_count } }) %>
+        <div class="preview"><%= c.last_text %></div></span>
+      <% if (c.unread) { %><span class="badge boost"><%= c.unread %></span><% } %>
+      <small class="muted"><%= h.date(c.last_message_at) %></small>
+    </a>
+  <% }) %>
+</div>
+<% } %>
+<%- include('../partials/footer') %>

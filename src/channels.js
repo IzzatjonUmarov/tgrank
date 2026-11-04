@@ -10,11 +10,12 @@ const pastSubs = (days) =>
 
 const BASE_SELECT = `
   SELECT c.*, cat.name AS category_name, cat.slug AS category_slug, cat.icon AS category_icon,
+    ou.rating_avg AS owner_rating, ou.rating_count AS owner_rating_count,
     c.subscribers - COALESCE(${pastSubs(1)}, c.subscribers) AS growth_day,
     c.subscribers - COALESCE(${pastSubs(7)}, c.subscribers) AS growth_week,
     c.subscribers - COALESCE(${pastSubs(30)}, c.subscribers) AS growth_month,
     (c.boost_until IS NOT NULL AND c.boost_until > datetime('now')) AS boosted
-  FROM channels c LEFT JOIN categories cat ON cat.id = c.category_id`;
+  FROM channels c LEFT JOIN categories cat ON cat.id = c.category_id LEFT JOIN users ou ON ou.id = c.owner_id`;
 
 const SORTS = {
   popular: 'boosted DESC, c.featured DESC, c.subscribers DESC',
@@ -29,6 +30,7 @@ const SORTS = {
   reach: 'c.avg_reach IS NULL, c.avg_reach DESC',
   err: 'c.err IS NULL, c.err DESC',
   price: 'c.ad_min_price_uzs IS NULL, c.ad_min_price_uzs',
+  owner_rating: 'ou.rating_count IS NULL OR ou.rating_count = 0, ou.rating_avg DESC, ou.rating_count DESC',
   cpm: '(c.ad_min_price_uzs IS NULL OR c.avg_reach IS NULL OR c.avg_reach = 0), c.ad_min_price_uzs * 1.0 / c.avg_reach',
 };
 
@@ -53,7 +55,7 @@ function list({ q, type, category, language, minSubs, maxSubs, verified, clean, 
 
   const whereSql = 'WHERE ' + where.join(' AND ');
   const order = SORTS[sort] || SORTS.popular;
-  const total = db.get(`SELECT COUNT(*) AS n FROM channels c LEFT JOIN categories cat ON cat.id = c.category_id ${whereSql}`, ...params).n;
+  const total = db.get(`SELECT COUNT(*) AS n FROM channels c LEFT JOIN categories cat ON cat.id = c.category_id LEFT JOIN users ou ON ou.id = c.owner_id ${whereSql}`, ...params).n;
   const offset = (Math.max(1, page) - 1) * perPage;
   const items = db.all(`${BASE_SELECT} ${whereSql} ORDER BY ${order} LIMIT ? OFFSET ?`, ...params, perPage, offset);
   return { items, total, page: Number(page), pages: Math.max(1, Math.ceil(total / perPage)) };

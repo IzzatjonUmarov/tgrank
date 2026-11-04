@@ -88,6 +88,53 @@ CREATE TABLE IF NOT EXISTS reports (
   resolved INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS conversations (
+  id INTEGER PRIMARY KEY,
+  user_a INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_b INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  channel_id INTEGER REFERENCES channels(id) ON DELETE SET NULL,
+  last_message_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (user_a, user_b)
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id INTEGER PRIMARY KEY,
+  conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL DEFAULT 'text',
+  text TEXT NOT NULL,
+  order_id INTEGER,
+  read_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id);
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY,
+  channel_id INTEGER REFERENCES channels(id) ON DELETE SET NULL,
+  channel_title TEXT NOT NULL,
+  customer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  executor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  format TEXT NOT NULL,
+  price INTEGER,
+  currency TEXT NOT NULL DEFAULT 'UZS',
+  publish_date TEXT,
+  note TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_orders_users ON orders(executor_id, status);
+CREATE TABLE IF NOT EXISTS user_ratings (
+  id INTEGER PRIMARY KEY,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  from_user INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL CHECK (score BETWEEN 1 AND 10),
+  text TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (order_id, from_user)
+);
 CREATE TABLE IF NOT EXISTS posts (
   channel_id INTEGER NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
   post_id INTEGER NOT NULL,
@@ -142,6 +189,10 @@ addColumn('channels', 'ad_min_price_uzs', 'INTEGER');
 addColumn('channels', 'ad_contact', 'TEXT');
 addColumn('channels', 'ad_note', 'TEXT');
 addColumn('channels', 'ad_updated_at', 'TEXT');
+addColumn('users', 'rating_avg', 'REAL NOT NULL DEFAULT 0');
+addColumn('users', 'rating_count', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('users', 'orders_done', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('users', 'about', "TEXT NOT NULL DEFAULT ''");
 addColumn('stats', 'avg_reach', 'INTEGER');
 addColumn('stats', 'err', 'REAL');
 

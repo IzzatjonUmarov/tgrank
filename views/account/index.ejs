@@ -3,7 +3,8 @@
   <h1>Личный кабинет</h1>
   <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Выйти</button></form>
 </div>
-<p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · с <%= h.date(user.created_at) %></p>
+<p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · с <%= h.date(user.created_at) %> · <a href="/u/<%= user.id %>">мой профиль</a> <%- include('../partials/user-rating', { u: user }) %></p>
+<div class="actions"><a class="btn btn-ghost btn-sm" href="/messages">✉️ Сообщения</a><a class="btn btn-ghost btn-sm" href="/orders">📦 Заказы</a></div>
 
 <section class="panel">
   <div class="section-head"><h2>Мои каналы</h2><a class="btn btn-primary btn-sm" href="/add">+ Добавить</a></div>

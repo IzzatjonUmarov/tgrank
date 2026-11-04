@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 const config = require('./src/config');
 const db = require('./src/db');
 const { updateAll } = require('./src/stats');
+const social = require('./src/social');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
   if (req.session.uid && !req.user) req.session.uid = null;
 
   res.locals.user = req.user;
+  res.locals.unread = req.user ? { messages: social.unreadMessages(req.user.id), orders: social.ordersNeedingAction(req.user.id) } : null;
   res.locals.csrf = req.session.csrf;
   res.locals.flash = req.session.flash || null;
   req.session.flash = null;
@@ -56,6 +58,9 @@ app.use((req, res, next) => {
 
 app.use(require('./src/routes/auth'));
 app.use(require('./src/routes/public'));
+app.use(require('./src/routes/users'));
+app.use('/messages', require('./src/routes/messages'));
+app.use('/orders', require('./src/routes/orders'));
 app.use('/account', require('./src/routes/account'));
 app.use('/admin', require('./src/routes/admin'));
 app.use('/api', require('./src/routes/api'));

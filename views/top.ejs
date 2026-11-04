@@ -3,6 +3,7 @@
 <div class="tabs">
   <% for (const [k, v] of Object.entries(h.TYPES_PLURAL)) { %><a class="<%= type === k ? 'active' : '' %>" href="<%= h.qs(query, { type: k }) %>"><%= v %></a><% } %>
 </div>
+<p class="small"><a href="/users">⭐ Рейтинг пользователей по выполненным заказам →</a></p>
 <div class="tabs tabs-sub">
   <% for (const [k, v] of Object.entries(TOP_TABS)) { %><a class="<%= sort === k ? 'active' : '' %>" href="<%= h.qs(query, { by: k }) %>"><%= v %></a><% } %>
 </div>

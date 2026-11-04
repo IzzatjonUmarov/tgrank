@@ -28,6 +28,8 @@
       <a class="btn btn-primary btn-sm" href="/add">+ Добавить</a>
       <% if (user) { %>
         <% if (user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin">Админка</a><% } %>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/messages" title="Сообщения">✉️<span class="count" id="unread-messages" <%= unread.messages ? '' : 'hidden' %>><%= unread.messages %></span></a>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/orders" title="Заказы">📦<span class="count" id="unread-orders" <%= unread.orders ? '' : 'hidden' %>><%= unread.orders %></span></a>
         <a class="btn btn-ghost btn-sm" href="/account">👤 <%= user.username %></a>
       <% } else { %>
         <a class="btn btn-ghost btn-sm" href="/login">Войти</a>

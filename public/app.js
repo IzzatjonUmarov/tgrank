@@ -87,3 +87,77 @@ function barChart(box) {
 
 document.querySelectorAll('.chart-line').forEach(lineChart);
 document.querySelectorAll('.chart-bars').forEach(barChart);
+
+// Переписка: отправка без перезагрузки и подгрузка новых сообщений
+(function chat() {
+  const box = document.getElementById('chat');
+  const form = document.getElementById('chat-form');
+  if (!box || !form) return;
+  const conv = box.dataset.conv;
+  let last = Number(box.dataset.last) || 0;
+  const scroll = () => { box.scrollTop = box.scrollHeight; };
+  scroll();
+
+  const render = (m) => {
+    if (document.getElementById('m' + m.id)) return;
+    document.getElementById('chat-empty')?.remove();
+    const el = document.createElement('div');
+    el.className = 'msg ' + (m.kind === 'system' ? 'system' : m.mine ? 'mine' : '');
+    el.id = 'm' + m.id;
+    el.append(document.createTextNode(m.text));
+    if (m.order_id) {
+      const a = document.createElement('a');
+      a.href = '/orders/' + m.order_id; a.textContent = ' Открыть заказ →';
+      el.append(a);
+    }
+    const t = document.createElement('time'); t.textContent = m.at + ' UTC';
+    el.append(t);
+    box.append(el);
+    last = Math.max(last, m.id);
+  };
+  const poll = async () => {
+    try {
+      const r = await fetch(`/messages/${conv}/poll?after=${last}`, { headers: { Accept: 'application/json' } });
+      if (!r.ok) return;
+      const items = await r.json();
+      if (items.length) { items.forEach(render); scroll(); }
+    } catch { /* сеть недоступна — попробуем позже */ }
+  };
+  setInterval(poll, 5000);
+
+  const textarea = form.querySelector('textarea');
+  textarea.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = textarea.value.trim();
+    if (!text) return;
+    const btn = form.querySelector('button'); btn.disabled = true;
+    try {
+      const r = await fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' },
+        body: new URLSearchParams(new FormData(form)),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(data.error || 'Не удалось отправить сообщение.'); return; }
+      textarea.value = '';
+      await poll();
+    } finally { btn.disabled = false; textarea.focus(); }
+  });
+})();
+
+// Счётчики непрочитанных сообщений и заказов в шапке
+(function unread() {
+  const m = document.getElementById('unread-messages'), o = document.getElementById('unread-orders');
+  if (!m || !o) return;
+  const set = (el, n) => { el.textContent = n; el.hidden = !n; };
+  setInterval(async () => {
+    if (document.hidden) return;
+    try {
+      const r = await fetch('/messages/api/unread');
+      if (r.ok) { const d = await r.json(); set(m, d.messages); set(o, d.orders); }
+    } catch { /* ignore */ }
+  }, 30000);
+})();

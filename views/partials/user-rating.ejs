@@ -1,0 +1,1 @@
+<% if (u && u.rating_count) { %><span class="urating" title="Средняя оценка по <%= u.rating_count %> завершённым заказам">⭐ <%= u.rating_avg.toFixed(1) %>/10 · <%= u.rating_count %></span><% } else { %><span class="urating none" title="Пока нет оценок">нет оценок</span><% } %>
