@@ -177,7 +177,7 @@ router.post('/c/:username/refresh', requireUser, async (req, res, next) => {
       req.flash('info', `Данные обновлялись недавно. Повторить можно через ${REFRESH_MINUTES} минут.`);
       return back(req, res, c);
     }
-    const r = await syncChannel(c).catch((e) => ({ ok: false, error: e.message }));
+    const r = await syncChannel(c, { priority: 'high' }).catch((e) => ({ ok: false, error: e.message }));
     req.flash(r.ok ? 'success' : 'error', r.ok ? 'Данные и анализ обновлены.' : `Не удалось обновить: ${r.error}`);
     back(req, res, c);
   } catch (e) { next(e); }
@@ -207,7 +207,7 @@ router.post('/c/:username/verify', requireUser, async (req, res, next) => {
     const c = ch.byUsername(req.params.username);
     if (!c || c.owner_id) return res.redirect(c ? `/c/${c.username}` : '/');
     const code = ch.verifyCode(c.id, req.user.id);
-    const info = await fetchProfile(c).catch(() => null);
+    const info = await fetchProfile(c, { priority: 'high' }).catch(() => null);
     if (info && info.description.includes(code)) {
       db.run('UPDATE channels SET owner_id = ? WHERE id = ? AND owner_id IS NULL', req.user.id, c.id);
       if (c.status === 'draft') {
@@ -254,8 +254,9 @@ router.post('/add', requireUser, async (req, res, next) => {
     // Частный канал: служебный адрес на сайте вместо username
     const slug = username || 'private_' + crypto.randomBytes(5).toString('hex');
     let info;
-    try { info = invite ? await fetchInviteInfo(invite, slug) : await fetchChannelInfo(username); } catch { info = undefined; }
-    if (info === null) return fail(invite ? 'Ссылка-приглашение недействительна или просрочена. Создайте постоянную ссылку в настройках канала.' : `Публичный канал, группа или бот @${username} не найден в Telegram.`);
+    const HIGH = { priority: 'high' };
+    try { info = invite ? await fetchInviteInfo(invite, slug, HIGH) : await fetchChannelInfo(username, HIGH); } catch { info = undefined; }
+    if (info === null) return fail(invite ? 'Ссылка-приглашение недействительна или просрочена. Создайте постоянную ссылку в настройках канала.' : `Не удалось найти @${username} в Telegram. Проверьте, что у канала публичная ссылка именно такая (Telegram → настройки канала → Тип канала → Публичная ссылка). Если ссылка верная, попробуйте ещё раз через минуту.`);
     if (info && info.type === 'user') return fail('Это личный аккаунт. Добавлять можно только каналы, группы и ботов.');
     if (!info && invite) return fail('Не удалось получить данные канала из Telegram. Попробуйте позже.');
     info = info || { username, title: '@' + username, description: '', avatar_url: null, type: /bot$/i.test(username) ? 'bot' : 'channel', subscribers: 0, tg_verified: 0 };
@@ -270,7 +271,7 @@ router.post('/add', requireUser, async (req, res, next) => {
       status, req.user.id, uz ? 1 : 0, invite ? 1 : 0, invite);
     const id = Number(lastInsertRowid);
     ch.recordStats(id, info.subscribers);
-    if (info.type === 'channel' && !invite) await syncPosts(id, username).catch(() => {});
+    if (info.type === 'channel' && !invite) await syncPosts(id, username, HIGH).catch(() => {});
     analyze(id);
 
     if (invite) {

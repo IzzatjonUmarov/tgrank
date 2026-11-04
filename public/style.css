@@ -213,3 +213,5 @@ pre.code { overflow-x: auto; font-size: 13px; }
 .check[hidden] { display: none !important; }
 .form .check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
 .form .check input { display: inline-block; width: auto; margin: 3px 0 0; flex: none; }
+.dl-left dd { text-align: left; overflow-wrap: anywhere; }
+pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }

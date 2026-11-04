@@ -69,7 +69,7 @@ router.post('/channels/:id/category', (req, res) => {
 router.post('/channels/:id/refresh', async (req, res, next) => {
   try {
     const c = ch.byId(Number(req.params.id));
-    const r = c ? await syncChannel(c).catch((e) => ({ ok: false, error: e.message })) : { ok: false, error: 'не найден' };
+    const r = c ? await syncChannel(c, { priority: 'high' }).catch((e) => ({ ok: false, error: e.message })) : { ok: false, error: 'не найден' };
     if (r.ok) req.flash('success', `@${c.username}: ${r.info.subscribers} подписчиков, риск накрутки ${r.analysis.score}/100.`);
     else req.flash('error', `Не удалось обновить: ${r.error}`);
     goBack(req, res);
@@ -154,6 +154,36 @@ router.post('/region', (req, res) => {
 router.post('/channels/:id/mark-uz', (req, res) => {
   db.run('UPDATE channels SET is_uz = 1 WHERE id = ?', Number(req.params.id));
   goBack(req, res);
+});
+
+// Диагностика: что Telegram отдаёт по username (помогает разобраться, почему канал «не найден»)
+router.get('/tme', async (req, res, next) => {
+  try {
+    const tg = require('../telegram');
+    const username = tg.parseUsername(req.query.u || '');
+    let result = null;
+    if (username) {
+      const probe = async (path) => {
+        try {
+          const html = await tg.tmeGet(path, { priority: 'high' });
+          const last = tg.queueSize().last;
+          const has = (re) => re.test(html);
+          return {
+            path, status: last?.status, finalUrl: last?.url, length: html.length,
+            marks: {
+              tgme_page_title: has(/class="tgme_page_title"/), tgme_page_extra: has(/class="tgme_page_extra"/),
+              channel_preview: has(/tgme_channel_info_header_title/), posts: has(/tgme_widget_message_wrap/),
+              og_title: (html.match(/<meta property="og:title" content="([^"]*)"/) || [])[1] || null,
+            },
+            parsed: path.startsWith('s/') ? tg.parsePreview(html, username) : tg.parsePage(html, username),
+            snippet: html.replace(/\s+/g, ' ').slice(0, 1500),
+          };
+        } catch (e) { return { path, error: e.message }; }
+      };
+      result = { username, page: await probe(username), preview: await probe(`s/${username}`) };
+    }
+    res.render('admin/tme', { title: 'Диагностика t.me', q: req.query.u || '', result, queue: tg.queueSize() });
+  } catch (e) { next(e); }
 });
 
 router.get('/import', (req, res) => {

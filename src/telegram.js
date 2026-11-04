@@ -37,36 +37,75 @@ function parseCount(text) {
 // Все запросы к t.me идут по одному с паузой, чтобы не получить блокировку.
 // При ответе 429 очередь ставится на паузу.
 const TME_INTERVAL_MS = Number(process.env.TME_INTERVAL_MS || 1500);
-let tmeChain = Promise.resolve();
-let tmePauseUntil = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function tmeGet(path) {
-  const run = async () => {
-    const wait = tmePauseUntil - Date.now();
-    if (wait > 0) await sleep(wait);
-    try {
-      const res = await fetch(`https://t.me/${path}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TgRankBot/1.0)', 'Accept-Language': 'en' },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (res.status === 429) {
-        tmePauseUntil = Date.now() + 60_000;
-        throw new Error('t.me: слишком много запросов, пауза 60 с');
-      }
-      if (!res.ok) throw new Error(`t.me ответил ${res.status}`);
-      return await res.text();
-    } finally {
-      await sleep(TME_INTERVAL_MS);
-    }
-  };
-  const p = tmeChain.then(run, run);
-  tmeChain = p.catch(() => {});
-  return p;
+// Очередь запросов к t.me: по одному с паузой, при 429 — пауза минуту.
+// Запросы пользователей (high) обгоняют фоновые: импорт, паук, обновление статистики.
+const tmeQueue = { high: [], low: [] };
+let tmeBusy = false;
+let tmePauseUntil = 0;
+let lastResponse = null; // для диагностики в админке
+
+function tmeGet(path, { priority = 'low' } = {}) {
+  return new Promise((resolve, reject) => {
+    tmeQueue[priority === 'high' ? 'high' : 'low'].push({ path, resolve, reject });
+    drain();
+  });
 }
 
-async function fetchPage(username) {
-  return parsePage(await tmeGet(username), username);
+async function drain() {
+  if (tmeBusy) return;
+  tmeBusy = true;
+  try {
+    let job;
+    while ((job = tmeQueue.high.shift() || tmeQueue.low.shift())) {
+      const wait = tmePauseUntil - Date.now();
+      if (wait > 0) await sleep(wait);
+      try {
+        const res = await fetch(`https://t.me/${job.path}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 TgRank/1.0',
+            'Accept-Language': 'en-US,en;q=0.9',
+            Accept: 'text/html,application/xhtml+xml',
+          },
+          signal: AbortSignal.timeout(15000),
+        });
+        const html = res.ok ? await res.text() : '';
+        lastResponse = { path: job.path, status: res.status, url: res.url, length: html.length, at: new Date().toISOString() };
+        if (res.status === 429) {
+          tmePauseUntil = Date.now() + 60_000;
+          throw new Error('t.me: слишком много запросов, пауза 60 с');
+        }
+        if (!res.ok) throw new Error(`t.me ответил ${res.status}`);
+        job.resolve(html);
+      } catch (e) {
+        job.reject(e);
+      }
+      await sleep(TME_INTERVAL_MS);
+    }
+  } finally {
+    tmeBusy = false;
+  }
+}
+
+function queueSize() {
+  return { high: tmeQueue.high.length, low: tmeQueue.low.length, pausedFor: Math.max(0, tmePauseUntil - Date.now()), last: lastResponse };
+}
+
+// Профиль по username. Если на странице нет блока с названием (Telegram иногда отдаёт
+// урезанную страницу при частых запросах), повторяем и пробуем веб-просмотр t.me/s/.
+async function fetchPage(username, opts = {}) {
+  let info = parsePage(await tmeGet(username, opts), username);
+  if (info) return info;
+  // Повтор — только для запросов пользователей, чтобы не тратить лимит на фоновые проверки
+  if (opts.priority === 'high') {
+    await sleep(3000);
+    info = parsePage(await tmeGet(username, opts), username);
+    if (info) return info;
+  }
+  info = parsePreview(await tmeGet(`s/${username}`, opts).catch(() => ''), username);
+  if (!info) console.warn(`[t.me] не удалось разобрать профиль @${username}:`, JSON.stringify(lastResponse));
+  return info;
 }
 
 // Пригласительная ссылка частного канала: t.me/+HASH или t.me/joinchat/HASH
@@ -75,22 +114,43 @@ function parseInvite(input) {
   return m ? `https://t.me/+${m[1]}` : null;
 }
 
-async function fetchInviteInfo(inviteLink, username) {
+async function fetchInviteInfo(inviteLink, username, opts = {}) {
   const hash = parseInvite(inviteLink)?.split('+')[1];
   if (!hash) return null;
-  const info = parsePage(await tmeGet(`+${hash}`), username);
+  const info = parsePage(await tmeGet(`+${hash}`, opts), username);
   if (info && info.type === 'user') info.type = 'channel';
   return info;
+}
+
+// Веб-просмотр канала t.me/s/<username>: есть только у публичных каналов
+function parsePreview(html, username) {
+  if (!html) return null;
+  const pick = (re) => { const m = html.match(re); return m ? m[1] : ''; };
+  const title = decodeEntities(pick(/<div class="tgme_channel_info_header_title"[^>]*>([\s\S]*?)<\/div>/));
+  if (!title) return null;
+  const counter = html.match(/<span class="counter_value">([^<]+)<\/span>\s*<span class="counter_type">(subscribers?|members?)<\/span>/i);
+  return {
+    username,
+    title,
+    description: decodeEntities(pick(/<div class="tgme_channel_info_description"[^>]*>([\s\S]*?)<\/div>/)),
+    avatar_url: pick(/<i class="tgme_page_photo_image[^"]*"[^>]*>\s*<img src="([^"]+)"/) || null,
+    type: counter && /member/i.test(counter[2]) ? 'group' : 'channel',
+    subscribers: counter ? parseCount(counter[1]) : 0,
+    tg_verified: /verified-icon/.test(html) ? 1 : 0,
+  };
 }
 
 function parsePage(html, username) {
   const pick = (re) => { const m = html.match(re); return m ? m[1] : ''; };
 
-  const title = decodeEntities(pick(/<div class="tgme_page_title"[^>]*>([\s\S]*?)<\/div>/));
-  if (!title) return null; // нет такого публичного username
-  const description = decodeEntities(pick(/<div class="tgme_page_description[^"]*"[^>]*>([\s\S]*?)<\/div>/));
-  const extra = decodeEntities(pick(/<div class="tgme_page_extra">([\s\S]*?)<\/div>/));
-  const avatar = pick(/<img class="tgme_page_photo_image" src="([^"]+)"/);
+  const meta = (name) => decodeEntities(pick(new RegExp(`<meta property="${name}" content="([^"]*)"`)));
+  let title = decodeEntities(pick(/<div class="tgme_page_title"[^>]*>([\s\S]*?)<\/div>/));
+  const extra = decodeEntities(pick(/<div class="tgme_page_extra"[^>]*>([\s\S]*?)<\/div>/));
+  // Запасной вариант — мета-теги og:*, но только если на странице есть счётчик подписчиков
+  if (!title && extra) title = meta('og:title');
+  if (!title || /^Telegram: (Contact|Join|View) @/i.test(title)) return null; // нет такого публичного username
+  const description = decodeEntities(pick(/<div class="tgme_page_description[^"]*"[^>]*>([\s\S]*?)<\/div>/)) || meta('og:description');
+  const avatar = pick(/<img class="tgme_page_photo_image" src="([^"]+)"/) || (title ? meta('og:image') : '');
   const verified = /verified-icon|tgme_page_title_verified/.test(html);
 
   let type = 'channel';
@@ -115,8 +175,8 @@ async function botApi(method, params) {
   return data.result;
 }
 
-async function fetchChannelInfo(username) {
-  const info = await fetchPage(username);
+async function fetchChannelInfo(username, opts = {}) {
+  const info = await fetchPage(username, opts);
   if (info && config.botToken && info.type !== 'bot' && info.type !== 'user') {
     try {
       info.subscribers = await botApi('getChatMemberCount', { chat_id: '@' + username });
@@ -141,8 +201,8 @@ function checkTelegramAuth(data) {
 // Последние посты канала с публичной страницы t.me/s/<username>.
 // Возвращает null, если у канала нет веб-превью (группы, боты, закрытые).
 // before — листать историю: посты с номером меньше указанного
-async function fetchPosts(username, before = null) {
-  const html = await tmeGet(`s/${username}${before ? `?before=${before}` : ''}`);
+async function fetchPosts(username, before = null, opts = {}) {
+  const html = await tmeGet(`s/${username}${before ? `?before=${before}` : ''}`, opts);
   if (!/tgme_widget_message_wrap/.test(html)) return null;
 
   const counter = html.match(/<span class="counter_value">([^<]+)<\/span>\s*<span class="counter_type">(subscribers?|members?)<\/span>/i);
@@ -185,4 +245,4 @@ async function fetchPosts(username, before = null) {
   return { subscribers, posts, mentions: found, text: texts.join('\n').slice(0, 20000) };
 }
 
-module.exports = { parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };
+module.exports = { tmeGet, queueSize, parsePage, parsePreview, parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };

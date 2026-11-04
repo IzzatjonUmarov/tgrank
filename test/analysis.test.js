@@ -100,6 +100,13 @@ global.fetch = async (url) => {
   assert.equal(ch('goodchan').crawl_done, 1);
   console.log('crawl:', require(R + 'crawler').crawlStats());
 
+  // Запасной разбор: мета-теги и веб-просмотр t.me/s/
+  const og = tg.parsePage('<meta property="og:title" content="Bakiroo"><meta property="og:description" content="Biznes"><div class="tgme_page_extra">12 345 subscribers</div>', 'the_bakiroo');
+  assert.equal(og.title, 'Bakiroo'); assert.equal(og.subscribers, 12345);
+  assert.equal(tg.parsePage('<meta property="og:title" content="Telegram: Contact @nobody">', 'nobody'), null);
+  const pv = tg.parsePreview('<div class="tgme_channel_info_header_title"><span>Bakiroo</span></div><div class="tgme_channel_info_description">Biznes</div><span class="counter_value">5.4K</span> <span class="counter_type">subscribers</span>', 'the_bakiroo');
+  assert.equal(pv.title, 'Bakiroo'); assert.equal(pv.subscribers, 5400);
+
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);
   console.log('ALL OK');

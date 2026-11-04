@@ -1,0 +1,22 @@
+<%- include('../partials/header') %>
+<h1>Диагностика t.me</h1>
+<%- include('_nav') %>
+<p class="muted">Показывает, что Telegram отдаёт нашему серверу по username. Если канал «не найден», проверьте его здесь и пришлите скриншот разработчику.</p>
+<form class="inline-filters"><input name="u" value="<%= q %>" placeholder="@username или ссылка" required><button class="btn btn-primary btn-sm">Проверить</button></form>
+<div class="panel small">Очередь запросов к t.me: пользовательских <b><%= queue.high %></b>, фоновых <b><%= queue.low %></b><% if (queue.pausedFor) { %>, пауза после 429: <b><%= Math.round(queue.pausedFor / 1000) %> с</b><% } %>.</div>
+<% if (result) { %>
+  <% for (const r of [result.page, result.preview]) { %>
+  <section class="panel">
+    <h3>https://t.me/<%= r.path %></h3>
+    <% if (r.error) { %><div class="flash flash-error"><%= r.error %></div><% } else { %>
+    <dl class="dl dl-left">
+      <dt>HTTP</dt><dd><%= r.status %> · <%= h.num(r.length) %> байт<% if (r.finalUrl && !r.finalUrl.endsWith(r.path)) { %> · редирект на <%= r.finalUrl %><% } %></dd>
+      <% for (const [k, v] of Object.entries(r.marks)) { %><dt><%= k %></dt><dd><%= v === true ? '✔ есть' : v === false ? '✖ нет' : (v || '—') %></dd><% } %>
+      <dt>Результат разбора</dt><dd><% if (r.parsed) { %><b><%= r.parsed.title %></b> · <%= r.parsed.type %> · <%= h.num(r.parsed.subscribers) %><% } else { %><span class="risk-high">не распознано</span><% } %></dd>
+    </dl>
+    <details><summary class="small">Начало страницы</summary><pre class="code"><%= r.snippet %></pre></details>
+    <% } %>
+  </section>
+  <% } %>
+<% } %>
+<%- include('../partials/footer') %>

@@ -64,7 +64,12 @@ async function processOne() {
     else db.run('UPDATE import_queue SET attempts = attempts + 1, error = ? WHERE username = ?', e.message, item.username);
     return true;
   }
-  if (!info) { finish('failed', 'не найден в Telegram'); return true; }
+  if (!info) {
+    // Telegram иногда отдаёт урезанную страницу — даём каналу второй шанс позже
+    if (item.attempts < 1) db.run(`UPDATE import_queue SET attempts = attempts + 1, added_at = datetime('now'), error = 'не найден, повтор позже' WHERE username = ?`, item.username);
+    else finish('failed', 'не найден в Telegram');
+    return true;
+  }
   if (info.type === 'user') { finish('skipped', 'личный аккаунт'); return true; }
   // Порог подписчиков для автопоиска и стартового списка: отсекает мелкие «двойники» известных каналов
   if (item.source !== 'admin' && info.type !== 'bot' && info.subscribers < config.discoveryMinSubscribers) {

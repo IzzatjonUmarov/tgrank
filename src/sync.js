@@ -7,16 +7,17 @@ const { savePosts, analyze } = require('./analysis');
 const { isUzbekMarket, guessLanguage } = require('./classify');
 
 // Профиль канала: публичный — по username, частный — по пригласительной ссылке
-function fetchProfile(channel) {
-  return channel.is_private ? fetchInviteInfo(channel.invite_link, channel.username) : fetchChannelInfo(channel.username);
+function fetchProfile(channel, opts = {}) {
+  return channel.is_private ? fetchInviteInfo(channel.invite_link, channel.username, opts) : fetchChannelInfo(channel.username, opts);
 }
 
-async function syncChannel(channel) {
-  const info = await fetchProfile(channel);
+// opts.priority = 'high' — запрос пользователя, идёт вне очереди фоновых задач
+async function syncChannel(channel, opts = {}) {
+  const info = await fetchProfile(channel, opts);
   if (!info) return { ok: false, error: channel.is_private ? 'ссылка-приглашение недействительна' : 'канал не найден в Telegram' };
   applyInfo(channel.id, info);
   // У частных каналов нет веб-просмотра постов — только подписчики
-  const page = info.type === 'channel' && !channel.is_private ? await fetchPosts(channel.username).catch(() => null) : null;
+  const page = info.type === 'channel' && !channel.is_private ? await fetchPosts(channel.username, null, opts).catch(() => null) : null;
   return { ok: true, info, analysis: applyPage(channel, info, page) };
 }
 
@@ -46,8 +47,8 @@ function languageOfPosts(text) {
   return top && top[0] !== 'other' ? top[0] : null;
 }
 
-async function syncPosts(channelId, username) {
-  const page = await fetchPosts(username).catch(() => null);
+async function syncPosts(channelId, username, opts = {}) {
+  const page = await fetchPosts(username, null, opts).catch(() => null);
   if (!page) return null;
   savePosts(channelId, page.posts);
   if (config.discovery) enqueueDiscovered(page.mentions);
