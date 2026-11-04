@@ -1,0 +1,50 @@
+<%- include('../partials/header') %>
+<h1>Импорт каналов</h1>
+<%- include('_nav') %>
+
+<div class="kpis">
+  <a class="kpi" href="?status=queued"><span>В очереди</span><b><%= queue.queued || 0 %></b></a>
+  <a class="kpi" href="?status=done"><span>Добавлено</span><b><%= queue.done || 0 %></b></a>
+  <a class="kpi" href="?status=skipped"><span>Пропущено</span><b><%= queue.skipped || 0 %></b></a>
+  <a class="kpi" href="?status=failed"><span>Ошибки</span><b><%= queue.failed || 0 %></b></a>
+</div>
+
+<div class="cols2">
+  <section class="panel">
+    <h2>Массовое добавление</h2>
+    <form method="post" action="/admin/import" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Список каналов <small class="muted">— по одному в строке, через пробел или запятую: @username, t.me/username</small>
+        <textarea name="list" rows="10" required placeholder="@kunuzofficial&#10;https://t.me/daryo&#10;gazetauz"></textarea></label>
+      <label>Категория<select name="category_id"><option value="">Определить автоматически</option><% categories.forEach((c) => { %><option value="<%= c.id %>"><%= c.icon %> <%= c.name %></option><% }) %></select></label>
+      <label class="check"><input type="checkbox" name="approve" value="1" checked> Сразу публиковать (без модерации)</label>
+      <button class="btn btn-primary">Добавить в очередь</button>
+    </form>
+  </section>
+  <section class="panel">
+    <h2>Как наполняется база</h2>
+    <ul class="small">
+      <li><b>Стартовый список</b> — около 120 популярных каналов, групп и ботов ставятся в очередь при запуске сервера.</li>
+      <li><b>Автопоиск</b> — <%= config.discovery ? 'включён' : 'выключен' %>. Каналы, которые упоминаются или репостятся в постах каналов из каталога, автоматически проверяются и добавляются, если у них от <%= h.num(config.discoveryMinSubscribers) %> подписчиков.</li>
+      <li><b>Ваш список</b> — проверяется раньше автопоиска. Категория и язык определяются по названию и описанию, их можно поменять в списке каналов.</li>
+      <li>Один запрос к Telegram примерно раз в 1,5 секунды, чтобы не получить блокировку: около 1000 каналов в час.</li>
+    </ul>
+    <div class="actions">
+      <form method="post" action="/admin/import/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Повторить ошибки</button></form>
+      <form method="post" action="/admin/import/clear" onsubmit="return confirm('Очистить очередь автопоиска?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Очистить очередь автопоиска</button></form>
+    </div>
+  </section>
+</div>
+
+<div class="tabs tabs-sub">
+  <% for (const [k, v] of Object.entries({ queued: 'В очереди', done: 'Добавлено', skipped: 'Пропущено', failed: 'Ошибки' })) { %><a class="<%= status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %>
+</div>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>Username</th><th>Источник</th><th>Статус</th><th>Комментарий</th><th>Дата</th></tr></thead>
+  <tbody><% items.forEach((i) => { %>
+    <tr><td><% if (i.status === 'done') { %><a href="/c/<%= i.username %>">@<%= i.username %></a><% } else { %><a href="https://t.me/<%= i.username %>" target="_blank" rel="noopener">@<%= i.username %></a><% } %></td>
+      <td><%= { admin: 'вручную', seed: 'стартовый', discovery: 'автопоиск' }[i.source] || i.source %></td>
+      <td><%= i.status %></td><td class="small muted"><%= i.error || '' %></td><td class="small"><%= h.date(i.processed_at || i.added_at) %></td></tr>
+  <% }) %><% if (!items.length) { %><tr><td colspan="5" class="muted">Пусто.</td></tr><% } %></tbody>
+</table></div>
+<%- include('../partials/footer') %>

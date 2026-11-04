@@ -18,3 +18,13 @@ module.exports = {
   boostCooldownHours: 24,
   perPage: 24,
 };
+
+Object.assign(module.exports, {
+  // Автопоиск: каналы, упомянутые или репостнутые в постах, попадают в очередь импорта
+  discovery: process.env.DISCOVERY !== 'false',
+  discoveryMinSubscribers: Number(process.env.DISCOVERY_MIN_SUBSCRIBERS || 1000),
+  autoApproveDiscovered: process.env.AUTO_APPROVE_DISCOVERED !== 'false',
+  discoveryQueueLimit: Number(process.env.DISCOVERY_QUEUE_LIMIT || 5000),
+  // Загружать стартовый список популярных каналов (src/starter-channels.txt)
+  starterList: process.env.STARTER_LIST !== 'false',
+});

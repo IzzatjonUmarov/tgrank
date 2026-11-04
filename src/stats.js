@@ -1,10 +1,8 @@
-// Периодическое обновление подписчиков всех одобренных каналов.
+// Периодическое обновление подписчиков, постов и аналитики всех одобренных каналов.
 // Запускается автоматически из server.js и вручную: npm run update-stats
 const db = require('./db');
-const { fetchChannelInfo } = require('./telegram');
-const { applyInfo } = require('./channels');
+const { syncChannel } = require('./sync');
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let running = false;
 
 async function updateAll({ log = console.log } = {}) {
@@ -16,10 +14,9 @@ async function updateAll({ log = console.log } = {}) {
                          ORDER BY last_checked_at IS NOT NULL, last_checked_at`);
     for (const row of rows) {
       try {
-        const info = await fetchChannelInfo(row.username);
-        if (info) { applyInfo(row.id, info); ok++; } else failed++;
+        const r = await syncChannel(row);
+        if (r.ok) ok++; else failed++;
       } catch { failed++; }
-      await sleep(1500); // бережём t.me от лишней нагрузки
     }
   } finally {
     running = false;
@@ -27,6 +24,6 @@ async function updateAll({ log = console.log } = {}) {
   log(`[stats] обновлено: ${ok}, ошибок: ${failed}`);
 }
 
-module.exports = { updateAll };
+module.exports = { updateAll, isRunning: () => running };
 
 if (require.main === module) updateAll().then(() => process.exit(0));

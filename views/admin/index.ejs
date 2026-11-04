@@ -7,6 +7,8 @@
   <a class="kpi" href="/admin/channels?status=rejected"><span>Отклонено</span><b><%= counts.rejected %></b></a>
   <a class="kpi" href="/admin/users"><span>Пользователи</span><b><%= counts.users %></b><small>+<%= counts.users_day %> за сутки</small></a>
   <a class="kpi" href="/admin/reports"><span>Жалобы</span><b><%= counts.reports %></b></a>
+  <a class="kpi" href="/admin/channels?status=approved&suspicious=1"><span>⚠️ Подозрение на накрутку</span><b><%= counts.suspicious %></b></a>
+  <a class="kpi" href="/admin/import"><span>Очередь импорта</span><b><%= queue.queued || 0 %></b><small>добавлено: <%= queue.done || 0 %></small></a>
   <div class="kpi"><span>Продвигаются</span><b><%= counts.boosted %></b></div>
   <div class="kpi"><span>Отзывы</span><b><%= counts.reviews %></b></div>
   <div class="kpi"><span>Новых каналов</span><b><%= counts.channels_day %></b><small>за сутки</small></div>
@@ -14,6 +16,6 @@
 <section class="panel">
   <h2>Статистика</h2>
   <p class="muted small">Подписчики обновляются автоматически каждые <%= config.statsIntervalHours %> ч. Можно запустить вручную:</p>
-  <form method="post" action="/admin/stats/update"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm">Обновить всё сейчас</button></form>
+  <form method="post" action="/admin/stats/update"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm" <%= statsRunning ? 'disabled' : '' %>><%= statsRunning ? 'Обновление идёт…' : 'Обновить всё сейчас' %></button></form>
 </section>
 <%- include('../partials/footer') %>

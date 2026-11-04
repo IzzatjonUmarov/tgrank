@@ -62,7 +62,12 @@ app.use((err, req, res, _next) => {
 });
 
 if (require.main === module) {
-  app.listen(config.port, () => console.log(`${config.siteName} запущен: ${config.baseUrl} (порт ${config.port})`));
+  app.listen(config.port, () => console.log(`${config.siteName} запущен на порту ${config.port}, BASE_URL=${config.baseUrl}`));
+  if (process.env.DISABLE_IMPORT !== '1') {
+    const importer = require('./src/importer');
+    if (config.starterList) importer.enqueueStarterList();
+    importer.runWorker();
+  }
   if (config.statsIntervalHours > 0 && process.env.DISABLE_STATS !== '1') {
     setTimeout(() => updateAll(), 60 * 1000);
     setInterval(() => updateAll(), config.statsIntervalHours * 3600 * 1000);

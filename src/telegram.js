@@ -34,13 +34,39 @@ function parseCount(text) {
   return Math.round(n);
 }
 
+// Все запросы к t.me идут по одному с паузой, чтобы не получить блокировку.
+// При ответе 429 очередь ставится на паузу.
+const TME_INTERVAL_MS = Number(process.env.TME_INTERVAL_MS || 1500);
+let tmeChain = Promise.resolve();
+let tmePauseUntil = 0;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function tmeGet(path) {
+  const run = async () => {
+    const wait = tmePauseUntil - Date.now();
+    if (wait > 0) await sleep(wait);
+    try {
+      const res = await fetch(`https://t.me/${path}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TgRankBot/1.0)', 'Accept-Language': 'en' },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (res.status === 429) {
+        tmePauseUntil = Date.now() + 60_000;
+        throw new Error('t.me: слишком много запросов, пауза 60 с');
+      }
+      if (!res.ok) throw new Error(`t.me ответил ${res.status}`);
+      return await res.text();
+    } finally {
+      await sleep(TME_INTERVAL_MS);
+    }
+  };
+  const p = tmeChain.then(run, run);
+  tmeChain = p.catch(() => {});
+  return p;
+}
+
 async function fetchPage(username) {
-  const res = await fetch(`https://t.me/${username}`, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TgRankBot/1.0)', 'Accept-Language': 'en' },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) throw new Error(`t.me ответил ${res.status}`);
-  const html = await res.text();
+  const html = await tmeGet(username);
   const pick = (re) => { const m = html.match(re); return m ? m[1] : ''; };
 
   const title = decodeEntities(pick(/<div class="tgme_page_title"[^>]*>([\s\S]*?)<\/div>/));
@@ -95,4 +121,47 @@ function checkTelegramAuth(data) {
   return fresh && hmac.length === hash.length && crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(hash));
 }
 
-module.exports = { parseUsername, fetchChannelInfo, checkTelegramAuth, parseCount };
+// Последние посты канала с публичной страницы t.me/s/<username>.
+// Возвращает null, если у канала нет веб-превью (группы, боты, закрытые).
+async function fetchPosts(username) {
+  const html = await tmeGet(`s/${username}`);
+  if (!/tgme_widget_message_wrap/.test(html)) return null;
+
+  const counter = html.match(/<span class="counter_value">([^<]+)<\/span>\s*<span class="counter_type">(subscribers?|members?)<\/span>/i);
+  const subscribers = counter ? parseCount(counter[1]) : null;
+
+  const posts = [];
+  const mentions = new Set();
+  const own = username.toLowerCase();
+  for (const chunk of html.split('data-post="').slice(1)) {
+    const id = chunk.match(/^[^/"]+\/(\d+)"/);
+    if (!id) continue;
+    const body = chunk.split('tgme_widget_message_wrap')[0];
+    const viewsText = body.match(/<span class="tgme_widget_message_views">([^<]+)<\/span>/);
+    const date = body.match(/<time datetime="([^"]+)"/);
+    if (!viewsText || !date) continue; // служебные сообщения без просмотров
+
+    let reactions = 0;
+    for (const m of body.matchAll(/<span class="tgme_reaction[^"]*">([\s\S]*?)<\/span>/g)) {
+      reactions += parseCount(decodeEntities(m[1]).replace(/^\D+/, ''));
+    }
+    const fwd = body.match(/tgme_widget_message_forwarded_from_name"[^>]*href="https?:\/\/t\.me\/([a-zA-Z][\w]{3,31})/);
+    for (const m of body.matchAll(/href="https?:\/\/t\.me\/(?:s\/)?([a-zA-Z][\w]{3,31})(?=["/?])/g)) mentions.add(m[1]);
+    for (const m of body.matchAll(/(?:^|[\s>(])@([a-zA-Z][\w]{3,31})\b/g)) mentions.add(m[1]);
+
+    posts.push({
+      id: Number(id[1]),
+      date: new Date(date[1]).toISOString(),
+      views: parseCount(viewsText[1]),
+      reactions,
+      forwarded_from: fwd ? fwd[1] : null,
+      has_media: /tgme_widget_message_(photo|video|document|roundvideo|voice)/.test(body) ? 1 : 0,
+    });
+    if (fwd) mentions.add(fwd[1]);
+  }
+  const reserved = new Set(['joinchat', 'addstickers', 'share', 'proxy', 'socks', 'iv', 'addtheme', 'setlanguage', 'contact', 'login', 'addemoji', 'boost', 'giftcode', 'invoice']);
+  const found = [...mentions].filter((u) => u.toLowerCase() !== own && !reserved.has(u.toLowerCase()));
+  return { subscribers, posts, mentions: found };
+}
+
+module.exports = { parseUsername, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };

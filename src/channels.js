@@ -26,9 +26,11 @@ const SORTS = {
   rating: '(c.rating_avg * c.rating_count + 3.5 * 3) / (c.rating_count + 3) DESC, c.subscribers DESC',
   new: 'c.approved_at DESC, c.id DESC',
   views: 'c.views DESC',
+  reach: 'c.avg_reach IS NULL, c.avg_reach DESC',
+  err: 'c.err IS NULL, c.err DESC',
 };
 
-function list({ q, type, category, language, minSubs, maxSubs, verified, sort = 'popular', page = 1, perPage = config.perPage, status = 'approved' } = {}) {
+function list({ q, type, category, language, minSubs, maxSubs, verified, clean, suspicious, sort = 'popular', page = 1, perPage = config.perPage, status = 'approved' } = {}) {
   const where = ['c.status = ?'];
   const params = [status];
   if (q) {
@@ -42,6 +44,8 @@ function list({ q, type, category, language, minSubs, maxSubs, verified, sort = 
   if (minSubs) { where.push('c.subscribers >= ?'); params.push(Number(minSubs)); }
   if (maxSubs) { where.push('c.subscribers <= ?'); params.push(Number(maxSubs)); }
   if (verified) where.push('c.owner_id IS NOT NULL');
+  if (clean) where.push('c.fraud_score < 25');
+  if (suspicious) where.push('c.fraud_score >= 25');
 
   const whereSql = 'WHERE ' + where.join(' AND ');
   const order = SORTS[sort] || SORTS.popular;

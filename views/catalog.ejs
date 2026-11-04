@@ -15,8 +15,9 @@
       <label>Язык<select name="language"><option value="">Любой</option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= f.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
       <div class="two"><label>Подписчиков от<input name="min" type="number" min="0" value="<%= f.minSubs %>"></label><label>до<input name="max" type="number" min="0" value="<%= f.maxSubs %>"></label></div>
       <label class="check"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Только с подтверждённым владельцем</label>
+      <label class="check"><input type="checkbox" name="clean" value="1" <%= f.clean ? 'checked' : '' %>> Без подозрений на накрутку</label>
       <label>Сортировка<select name="sort">
-        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', new: 'Новые', views: 'Просмотры на сайте' }; %>
+        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', reach: 'Охват поста', err: 'ERR', new: 'Новые', views: 'Просмотры на сайте' }; %>
         <% for (const [k, v] of Object.entries(sorts)) { %><option value="<%= k %>" <%= f.sort === k ? 'selected' : '' %>><%= v %></option><% } %>
       </select></label>
       <button class="btn btn-primary btn-block">Применить</button>

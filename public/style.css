@@ -191,3 +191,21 @@ pre.code { overflow-x: auto; font-size: 13px; }
 }
 .cols3 > *, .cols2 > *, .cols-main > *, .catalog > *, .grid > * { min-width: 0; }
 .kpi b .up, .kpi b .down, .kpi b .muted { font-size: 22px; }
+
+/* Анализ и накрутка */
+.fraud-alert { border-radius: var(--radius); padding: 14px 18px; margin-bottom: 16px; border: 1px solid; }
+.fraud-alert ul { margin: 8px 0; padding-left: 20px; }
+.fraud-alert p { margin: 0; opacity: .8; }
+.fraud-medium { background: color-mix(in srgb, #f5a623 14%, var(--panel)); border-color: #f5a623; }
+.fraud-high { background: color-mix(in srgb, var(--bad) 13%, var(--panel)); border-color: var(--bad); }
+.fraud-title { font-weight: 700; font-size: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.fraud-score { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--panel); }
+.risk-ok { color: var(--ok); } .risk-medium { color: #d48806; } .risk-high { color: var(--bad); }
+.badge.warn { background: #f5a623; color: #fff; }
+.kpis-sm { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.kpis-sm .kpi { background: var(--bg); }
+.kpis-sm .kpi b { font-size: 19px; }
+.chart-bars { height: 180px; margin-bottom: 12px; }
+.posts-table summary { cursor: pointer; margin: 8px 0; }
+.check-inline { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+.check-inline input { margin: 0; }

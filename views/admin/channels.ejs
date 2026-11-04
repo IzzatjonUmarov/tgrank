@@ -2,12 +2,13 @@
 <h1>Каналы</h1>
 <%- include('_nav') %>
 <div class="tabs tabs-sub">
-  <% for (const [k, v] of Object.entries({ pending: 'На модерации', approved: 'Опубликованные', rejected: 'Отклонённые' })) { %><a class="<%= status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %>
+  <% for (const [k, v] of Object.entries({ pending: 'На модерации', approved: 'Опубликованные', rejected: 'Отклонённые' })) { %><a class="<%= status === k && !suspicious ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %>
+  <a class="<%= suspicious ? 'active' : '' %>" href="?status=approved&suspicious=1">⚠️ Подозрение на накрутку</a>
 </div>
-<form class="inline-filters"><input type="hidden" name="status" value="<%= status %>"><input name="q" value="<%= q %>" placeholder="Поиск"><button class="btn btn-ghost btn-sm">Найти</button></form>
+<form class="inline-filters"><input type="hidden" name="status" value="<%= status %>"><% if (suspicious) { %><input type="hidden" name="suspicious" value="1"><% } %><input name="q" value="<%= q %>" placeholder="Поиск"><button class="btn btn-ghost btn-sm">Найти</button></form>
 <% const F = (action, label, cls = 'btn-ghost', extra = '') => `<form method="post" action="/admin/channels/${action}">${extra}<input type="hidden" name="_csrf" value="${csrf}"><button class="btn ${cls} btn-xs">${label}</button></form>`; %>
 <div class="panel table-wrap"><table class="table">
-  <thead><tr><th>Канал</th><th>Категория</th><th class="r">Подписчики</th><th>Добавлен</th><th>Действия</th></tr></thead>
+  <thead><tr><th>Канал</th><th>Категория</th><th class="r">Подписчики</th><th class="r">ERR</th><th class="r">Риск</th><th>Добавлен</th><th>Действия</th></tr></thead>
   <tbody>
   <% result.items.forEach((c) => { %>
   <tr>
@@ -16,6 +17,8 @@
     <td><form method="post" action="/admin/channels/<%= c.id %>/category"><input type="hidden" name="_csrf" value="<%= csrf %>">
       <select name="category_id" onchange="this.form.submit()"><option value="">—</option><% categories.forEach((cat) => { %><option value="<%= cat.id %>" <%= c.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option><% }) %></select></form></td>
     <td class="r"><%= h.num(c.subscribers) %></td>
+    <td class="r"><%= c.err != null ? c.err + '%' : '—' %></td>
+    <td class="r"><span class="risk-<%= c.fraud_score >= 50 ? 'high' : c.fraud_score >= 25 ? 'medium' : 'ok' %>" title="<%= JSON.parse(c.fraud_reasons || '[]').map((r) => r.text).join('\n') %>"><%= c.fraud_score %></span></td>
     <td class="small"><%= h.date(c.created_at) %></td>
     <td class="actions">
       <% if (status !== 'approved') { %><%- F(c.id + '/approve', '✔ Одобрить', 'btn-primary') %><% } %>
@@ -28,7 +31,7 @@
     </td>
   </tr>
   <% }) %>
-  <% if (!result.items.length) { %><tr><td colspan="5" class="muted">Пусто.</td></tr><% } %>
+  <% if (!result.items.length) { %><tr><td colspan="7" class="muted">Пусто.</td></tr><% } %>
   </tbody>
 </table></div>
 <%- include('../partials/pagination', { result }) %>

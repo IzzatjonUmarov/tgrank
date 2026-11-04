@@ -5,6 +5,14 @@ const ch = require('../channels');
 const { parseUsername, fetchChannelInfo } = require('../telegram');
 const { requireUser } = require('./guards');
 const { TYPES, LANGUAGES } = require('../helpers');
+const { fraudLevel, dailyDeltas, analyze } = require('../analysis');
+const { syncChannel, syncPosts } = require('../sync');
+
+const REFRESH_MINUTES = 30;
+function canRefresh(channel) {
+  if (!channel.last_checked_at) return true;
+  return Date.now() - Date.parse(channel.last_checked_at.replace(' ', 'T') + 'Z') >= REFRESH_MINUTES * 60_000;
+}
 
 const router = express.Router();
 
@@ -32,6 +40,7 @@ function renderCatalog(req, res, preset = {}) {
     minSubs: req.query.min || '',
     maxSubs: req.query.max || '',
     verified: req.query.verified === '1',
+    clean: req.query.clean === '1',
     sort: ch.SORTS[req.query.sort] ? req.query.sort : 'popular',
     page: Math.max(1, parseInt(req.query.page, 10) || 1),
     ...preset,
@@ -55,6 +64,8 @@ const TOP_TABS = {
   growth_day: 'Рост за сутки',
   growth_week: 'Рост за неделю',
   growth_month: 'Рост за месяц',
+  reach: 'По охвату',
+  err: 'По ERR',
   votes: 'По голосам',
   rating: 'По отзывам',
 };
@@ -63,8 +74,9 @@ router.get('/top', (req, res) => {
   const type = TYPES[req.query.type] ? req.query.type : 'channel';
   const category = req.query.category || '';
   const language = LANGUAGES[req.query.language] ? req.query.language : '';
-  const { items } = ch.list({ sort, type, category, language, perPage: 100 });
-  res.render('top', { title: `Топ-100: ${TOP_TABS[sort]}`, items, sort, type, category, language, TOP_TABS });
+  const clean = req.query.clean === '1';
+  const { items } = ch.list({ sort, type, category, language, clean, perPage: 100 });
+  res.render('top', { title: `Топ-100: ${TOP_TABS[sort]}`, items, sort, type, category, language, clean, TOP_TABS });
 });
 
 router.get('/c/:username', (req, res) => {
@@ -92,6 +104,12 @@ router.get('/c/:username', (req, res) => {
     isOwner: uid && channel.owner_id === uid,
     canBoost: canBoost(channel),
     similar: ch.similar(channel),
+    posts: db.all('SELECT * FROM posts WHERE channel_id = ? ORDER BY post_id DESC LIMIT 30', channel.id),
+    fraudReasons: JSON.parse(channel.fraud_reasons || '[]'),
+    fraud: fraudLevel(channel.fraud_score),
+    deltas: dailyDeltas(ch.history(channel.id, 31)).map((d) => ({ date: d.date, delta: Math.round(d.delta) })),
+    reachHistory: db.all(`SELECT date, avg_reach, err FROM stats WHERE channel_id = ? AND avg_reach IS NOT NULL ORDER BY date DESC LIMIT 90`, channel.id).reverse(),
+    canRefresh: canRefresh(channel),
   });
 });
 
@@ -147,6 +165,20 @@ router.post('/c/:username/report', requireUser, (req, res) => {
   db.run('INSERT INTO reports (channel_id, user_id, reason) VALUES (?, ?, ?)', c.id, req.user.id, reason);
   req.flash('success', 'Жалоба отправлена модераторам.');
   back(req, res, c);
+});
+
+// Обновить данные и анализ вручную (не чаще раза в 30 минут на канал)
+router.post('/c/:username/refresh', requireUser, async (req, res, next) => {
+  try {
+    const c = loadChannel(req, res); if (!c) return;
+    if (!canRefresh(c) && req.user.role !== 'admin') {
+      req.flash('info', `Данные обновлялись недавно. Повторить можно через ${REFRESH_MINUTES} минут.`);
+      return back(req, res, c);
+    }
+    const r = await syncChannel(c).catch((e) => ({ ok: false, error: e.message }));
+    req.flash(r.ok ? 'success' : 'error', r.ok ? 'Данные и анализ обновлены.' : `Не удалось обновить: ${r.error}`);
+    back(req, res, c);
+  } catch (e) { next(e); }
 });
 
 // Бесплатное продвижение (этап 1): владелец поднимает канал в блок «Продвигаемые» на 24 часа раз в сутки
@@ -215,6 +247,10 @@ router.post('/add', requireUser, async (req, res, next) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
       username, info.type, info.title, info.description, info.avatar_url, form.category_id, form.language, form.tags, info.subscribers, info.tg_verified, status, req.user.id);
     ch.recordStats(Number(lastInsertRowid), info.subscribers);
+    if (info.type === 'channel') {
+      await syncPosts(Number(lastInsertRowid), username).catch(() => {});
+      analyze(Number(lastInsertRowid));
+    }
 
     req.flash('success', status === 'approved' ? 'Канал добавлен.' : 'Канал отправлен на модерацию. Обычно проверка занимает до 24 часов.');
     res.redirect(`/c/${username}`);

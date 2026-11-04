@@ -1,9 +1,10 @@
 const express = require('express');
 const db = require('../db');
 const ch = require('../channels');
-const { fetchChannelInfo } = require('../telegram');
 const { requireAdmin } = require('./guards');
-const { updateAll } = require('../stats');
+const { updateAll, isRunning } = require('../stats');
+const importer = require('../importer');
+const { syncChannel } = require('../sync');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -20,15 +21,20 @@ router.get('/', (req, res) => {
       (SELECT COUNT(*) FROM reports WHERE resolved = 0) AS reports,
       (SELECT COUNT(*) FROM channels WHERE boost_until > datetime('now')) AS boosted,
       (SELECT COUNT(*) FROM users WHERE created_at >= datetime('now','-1 day')) AS users_day,
-      (SELECT COUNT(*) FROM channels WHERE created_at >= datetime('now','-1 day')) AS channels_day`),
+      (SELECT COUNT(*) FROM channels WHERE created_at >= datetime('now','-1 day')) AS channels_day,
+      (SELECT COUNT(*) FROM channels WHERE status = 'approved' AND fraud_score >= 25) AS suspicious`),
+    queue: importer.queueStats(),
+    statsRunning: isRunning(),
   });
 });
 
 router.get('/channels', (req, res) => {
   const status = ['pending', 'approved', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
-  const result = ch.list({ status, q: req.query.q, sort: status === 'pending' ? 'new' : 'subscribers', page: parseInt(req.query.page, 10) || 1, perPage: 50 });
+  const suspicious = req.query.suspicious === '1';
+  const result = ch.list({ status, q: req.query.q, suspicious, sort: status === 'pending' ? 'new' : 'subscribers', page: parseInt(req.query.page, 10) || 1, perPage: 50 });
+  if (suspicious) result.items.sort((a, b) => b.fraud_score - a.fraud_score);
   if (status === 'pending') result.items.reverse(); // старые заявки первыми
-  res.render('admin/channels', { title: 'Каналы', status, result, q: req.query.q || '' });
+  res.render('admin/channels', { title: 'Каналы', status, result, suspicious, q: req.query.q || '' });
 });
 
 const goBack = (req, res) => res.redirect(req.get('referer') || '/admin/channels');
@@ -60,9 +66,9 @@ router.post('/channels/:id/category', (req, res) => {
 router.post('/channels/:id/refresh', async (req, res, next) => {
   try {
     const c = ch.byId(Number(req.params.id));
-    const info = c && await fetchChannelInfo(c.username).catch(() => null);
-    if (info) { ch.applyInfo(c.id, info); req.flash('success', `@${c.username}: ${info.subscribers} подписчиков.`); }
-    else req.flash('error', 'Не удалось обновить данные из Telegram.');
+    const r = c ? await syncChannel(c).catch((e) => ({ ok: false, error: e.message })) : { ok: false, error: 'не найден' };
+    if (r.ok) req.flash('success', `@${c.username}: ${r.info.subscribers} подписчиков, риск накрутки ${r.analysis.score}/100.`);
+    else req.flash('error', `Не удалось обновить: ${r.error}`);
     goBack(req, res);
   } catch (e) { next(e); }
 });
@@ -131,6 +137,36 @@ router.post('/reviews/:id/delete', (req, res) => {
   const r = db.get('SELECT channel_id FROM reviews WHERE id = ?', Number(req.params.id));
   if (r) { db.run('DELETE FROM reviews WHERE id = ?', Number(req.params.id)); ch.refreshRating(r.channel_id); }
   goBack(req, res);
+});
+
+router.get('/import', (req, res) => {
+  const status = ['queued', 'done', 'failed', 'skipped'].includes(req.query.status) ? req.query.status : 'queued';
+  res.render('admin/import', {
+    title: 'Импорт каналов',
+    queue: importer.queueStats(),
+    status,
+    items: db.all(`SELECT * FROM import_queue WHERE status = ? ORDER BY COALESCE(processed_at, added_at) DESC LIMIT 200`, status),
+  });
+});
+router.post('/import', (req, res) => {
+  const lines = String(req.body.list || '').split(/[\s,;]+/).filter(Boolean).slice(0, 5000);
+  const r = importer.enqueue(lines, {
+    source: 'admin',
+    categoryId: parseInt(req.body.category_id, 10) || null,
+    approve: req.body.approve === '1',
+  });
+  req.flash('success', `В очередь добавлено: ${r.added}. Пропущено (дубли, уже в каталоге, неверный формат): ${r.skipped}.`);
+  res.redirect('/admin/import');
+});
+router.post('/import/retry', (req, res) => {
+  const r = db.run(`UPDATE import_queue SET status = 'queued', attempts = 0, error = NULL WHERE status = 'failed'`);
+  req.flash('info', `Повторно в очереди: ${r.changes}.`);
+  res.redirect('/admin/import');
+});
+router.post('/import/clear', (req, res) => {
+  const r = db.run(`DELETE FROM import_queue WHERE status = 'queued' AND source = 'discovery'`);
+  req.flash('info', `Удалено из очереди автопоиска: ${r.changes}.`);
+  res.redirect('/admin/import');
 });
 
 module.exports = router;

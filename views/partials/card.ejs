@@ -12,6 +12,8 @@
     <span title="Рост за неделю"><%- h.delta(c.growth_week) %> / нед.</span>
     <span class="badge"><%= h.TYPES[c.type] %></span>
     <% if (c.boosted) { %><span class="badge boost">🚀</span><% } %>
+    <% if (c.err != null) { %><span title="ERR — охват поста к подписчикам">ERR <b><%= c.err %>%</b></span><% } %>
+    <% if (c.fraud_score >= 25) { %><span class="badge warn" title="Подозрение на накрутку">⚠️ накрутка?</span><% } %>
     <% if (c.owner_id) { %><span class="badge ok" title="Владелец подтверждён">✔ владелец</span><% } %>
   </div>
 </a>

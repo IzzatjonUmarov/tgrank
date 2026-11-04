@@ -27,6 +27,14 @@
   </div>
 </section>
 
+<% if (fraud.key !== 'ok') { %>
+<div class="fraud-alert fraud-<%= fraud.key %>">
+  <div class="fraud-title">⚠️ <%= fraud.label %> <span class="fraud-score">риск <%= channel.fraud_score %>/100</span></div>
+  <ul><% fraudReasons.forEach((r) => { %><li><%= r.text %></li><% }) %></ul>
+  <p class="small">Это автоматическая оценка по открытым данным Telegram (динамика подписчиков и просмотры постов), а не доказательство. Проверяйте канал перед покупкой рекламы.</p>
+</div>
+<% } %>
+
 <div class="kpis">
   <div class="kpi"><span>Подписчики</span><b><%= h.num(channel.subscribers) %></b></div>
   <div class="kpi"><span>За сутки</span><b><%- h.delta(channel.growth_day) %></b></div>
@@ -40,8 +48,54 @@
   <div>
     <section class="panel">
       <div class="section-head"><h2>Динамика подписчиков</h2><span class="muted small">обновлено <%= h.date(channel.last_checked_at) %></span></div>
-      <div id="chart" class="chart" data-points='<%= JSON.stringify(history) %>'></div>
+      <div id="chart" class="chart chart-line" data-points='<%= JSON.stringify(history) %>'></div>
       <% if (history.length < 2) { %><p class="muted small">График появится, когда накопится статистика (обновление каждые <%= config.statsIntervalHours %> ч.).</p><% } %>
+    </section>
+
+    <section class="panel">
+      <div class="section-head"><h2>📊 Анализ канала</h2>
+        <% if (user && channel.status === 'approved') { %><form method="post" action="/c/<%= channel.username %>/refresh"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm" <%= canRefresh || user.role === 'admin' ? '' : 'disabled title="Не чаще раза в 30 минут"' %>>↻ Обновить</button></form><% } %>
+      </div>
+      <div class="kpis kpis-sm">
+        <div class="kpi" title="Средние просмотры поста старше суток"><span>Средний охват поста</span><b><%= channel.avg_reach != null ? h.num(channel.avg_reach) : '—' %></b></div>
+        <div class="kpi" title="Охват поста / подписчики"><span>ERR</span><b><%= channel.err != null ? channel.err + '%' : '—' %></b><small>норма 10–40%</small></div>
+        <div class="kpi"><span>Постов в день</span><b><%= channel.posts_per_day != null ? channel.posts_per_day : '—' %></b></div>
+        <div class="kpi" title="Реакции / просмотры"><span>Вовлечённость</span><b><%= channel.engagement != null ? channel.engagement + '%' : '—' %></b><small>реакции к просмотрам</small></div>
+        <div class="kpi"><span>Риск накрутки</span><b class="risk-<%= fraud.key %>"><%= channel.analyzed_at ? channel.fraud_score + '/100' : '—' %></b><small><%= channel.analyzed_at ? (fraud.key === 'ok' ? 'признаков нет' : fraud.label.toLowerCase()) : 'ещё не анализировался' %></small></div>
+      </div>
+      <% if (channel.type !== 'channel') { %>
+        <p class="muted small">Охваты доступны только для каналов с открытым веб-просмотром. Для <%= channel.type === 'group' ? 'групп' : 'ботов' %> анализируется только динамика участников.</p>
+      <% } else if (!posts.length) { %>
+        <p class="muted small">Посты пока не загружены: у канала может быть закрыт веб-просмотр (t.me/s/<%= channel.username %>), или данные ещё не обновлялись.</p>
+      <% } %>
+      <% if (fraud.key === 'ok' && channel.analyzed_at && history.length < 7) { %>
+        <p class="muted small">Истории подписчиков пока мало (<%= history.length %> дн.) — проверка скачков станет точнее через неделю наблюдений.</p>
+      <% } %>
+
+      <% if (deltas.length) { %>
+        <h3>Прирост подписчиков по дням</h3>
+        <div class="chart chart-bars" data-bars='<%= JSON.stringify(deltas.map((d) => ({ label: d.date, value: d.delta }))) %>'></div>
+      <% } %>
+      <% if (reachHistory.length >= 2) { %>
+        <h3>Динамика среднего охвата</h3>
+        <div class="chart chart-line" data-points='<%= JSON.stringify(reachHistory.map((r) => ({ date: r.date, subscribers: r.avg_reach }))) %>'></div>
+      <% } %>
+      <% if (posts.length) { %>
+        <h3>Просмотры последних постов</h3>
+        <div class="chart chart-bars" data-bars='<%= JSON.stringify(posts.slice().reverse().map((p) => ({ label: "#" + p.post_id + " · " + p.date.slice(0, 10), value: p.views }))) %>'></div>
+        <details class="posts-table"><summary class="small">Таблица постов (<%= posts.length %>)</summary>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th>Пост</th><th>Дата</th><th class="r">Просмотры</th><th class="r">ERR</th><th class="r">Реакции</th></tr></thead>
+            <tbody><% posts.forEach((p) => { %>
+              <tr><td><a href="https://t.me/<%= channel.username %>/<%= p.post_id %>" target="_blank" rel="noopener nofollow">#<%= p.post_id %></a><% if (p.forwarded_from) { %> <small class="muted">↪ @<%= p.forwarded_from %></small><% } %></td>
+                <td class="small"><%= new Date(p.date).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' }) %></td>
+                <td class="r"><%= h.num(p.views) %></td>
+                <td class="r"><%= channel.subscribers ? (p.views / channel.subscribers * 100).toFixed(1) + '%' : '—' %></td>
+                <td class="r"><%= h.num(p.reactions) %></td></tr>
+            <% }) %></tbody>
+          </table></div>
+        </details>
+      <% } %>
     </section>
 
     <section class="panel">

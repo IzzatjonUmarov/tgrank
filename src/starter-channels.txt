@@ -1,0 +1,129 @@
+# Стартовый список: ставится в очередь импорта при запуске.
+# Несуществующие username просто пропускаются. Дальше база растёт автопоиском
+# (каналы, которые упоминают и репостят каналы из каталога).
+# Узбекистан
+kunuzofficial
+daryo
+gazetauz
+uzbekistan24
+podrobnouz
+spotuz
+xushnudbek
+uzreport
+uzdaily
+qalampir
+darakchi
+anhoruz
+championat_asia
+uznews
+the_tashkent_times
+uzbekistan_airways
+uzinfocom
+tashkent_news
+uzbek_tilida
+buxoro_news
+samarqand_news
+fergana_news
+review_uz
+mohirdev
+uzum_market
+payme_uz
+click_uz
+# Новости и СМИ
+rian_ru
+tass_agency
+rbc_news
+meduzalive
+breakingmash
+bazabazon
+readovkanews
+topor
+varlamov_news
+kommersant
+forbesrussia
+bbcrussian
+dw_russian
+currenttime
+novaya_pishet
+istories_media
+lentachold
+izvestia
+# Бизнес и финансы
+banksta
+markettwits
+if_market_news
+cbrstocks
+russianmacro
+bitkogan
+proeconomics
+tinkoff_invest_official
+alfa_investments
+sberinvestments
+vcru
+rusbase
+# Технологии
+tginfo
+durov
+telegram
+habr_com
+rozetked
+iphones_ru
+ai_newz
+data_secrets
+techmedia
+denissexy
+exploitex
+hiaimedia
+pythonl
+javascriptv
+yandex
+# Крипто
+binance_announcements
+tonblockchain
+toncoin
+cointelegraph
+whale_alert_io
+notcoin
+the_open_network
+bitcoinmagazine
+coinmarketcap
+# Кино, спорт, развлечения
+kinopoisk
+sportsru
+matchtv
+championat
+rhymes
+leprasorium
+# Языки и образование
+englishdom
+skyeng
+lingualeo
+arzamas_academy
+postnauka
+# Боты
+BotFather
+gif
+vid
+pic
+bing
+wiki
+imdb
+youtube
+like
+vote
+bold
+sticker
+QuizBot
+gamee
+wallet
+CryptoBot
+PremiumBot
+DurgerKingBot
+SaveAsBot
+# Группы
+ru_python
+javascript_ru
+pythonru
+devops_ru
+golang_ru
+ru_docker
