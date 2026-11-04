@@ -7,6 +7,7 @@
   <a class="kpi" href="?status=done"><span>Добавлено</span><b><%= queue.done || 0 %></b></a>
   <a class="kpi" href="?status=skipped"><span>Пропущено</span><b><%= queue.skipped || 0 %></b></a>
   <a class="kpi" href="?status=failed"><span>Ошибки</span><b><%= queue.failed || 0 %></b></a>
+  <div class="kpi" title="Паук листает историю постов каналов и собирает упомянутые каналы"><span>🕷 Паук: каналов пройдено</span><b><%= crawl.done || 0 %> / <%= crawl.total || 0 %></b><small>страниц истории: <%= h.num(crawl.pages) %></small></div>
 </div>
 
 <div class="cols2">
@@ -29,7 +30,8 @@
       <li><b>Стартовый список</b> — около 100 узбекских каналов ставятся в очередь при запуске сервера.</li>
       <li><b>Автопоиск</b> — <%= config.discovery ? 'включён' : 'выключен' %>. Каналы, которые упоминаются или репостятся в постах каналов из каталога, автоматически проверяются и добавляются, если у них от <%= h.num(config.discoveryMinSubscribers) %> подписчиков.</li>
       <li><b>Ваш список</b> — проверяется раньше автопоиска. Категория и язык определяются по названию и описанию, их можно поменять в списке каналов.</li>
-      <li>Один запрос к Telegram примерно раз в 1,5 секунды, чтобы не получить блокировку: около 1000 каналов в час.</li>
+      <li><b>Паук</b> — когда очередь пуста, листает историю постов каналов каталога (до <%= config.crawlMaxPages %> страниц, около <%= config.crawlMaxPages * 20 %> постов на канал) и собирает все упомянутые и репостнутые каналы. Чаще упоминаемые кандидаты проверяются первыми.</li>
+      <li>Один запрос к Telegram примерно раз в 1,5 секунды, чтобы не получить блокировку: проверка канала — 2 запроса, около 1000 кандидатов в час.</li>
     </ul>
     <div class="actions">
       <form method="post" action="/admin/import/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Повторить ошибки</button></form>
@@ -42,11 +44,11 @@
   <% for (const [k, v] of Object.entries({ queued: 'В очереди', done: 'Добавлено', skipped: 'Пропущено', failed: 'Ошибки' })) { %><a class="<%= status === k ? 'active' : '' %>" href="?status=<%= k %>"><%= v %></a><% } %>
 </div>
 <div class="panel table-wrap"><table class="table">
-  <thead><tr><th>Username</th><th>Источник</th><th>Статус</th><th>Комментарий</th><th>Дата</th></tr></thead>
+  <thead><tr><th>Username</th><th>Источник</th><th class="r">Упоминаний</th><th>Статус</th><th>Комментарий</th><th>Дата</th></tr></thead>
   <tbody><% items.forEach((i) => { %>
     <tr><td><% if (i.status === 'done') { %><a href="/c/<%= i.username %>">@<%= i.username %></a><% } else { %><a href="https://t.me/<%= i.username %>" target="_blank" rel="noopener">@<%= i.username %></a><% } %></td>
-      <td><%= { admin: 'вручную', seed: 'стартовый', discovery: 'автопоиск' }[i.source] || i.source %></td>
+      <td><%= { admin: 'вручную', seed: 'стартовый', discovery: 'автопоиск' }[i.source] || i.source %></td><td class="r"><%= i.mentions %></td>
       <td><%= i.status %></td><td class="small muted"><%= i.error || '' %></td><td class="small"><%= h.date(i.processed_at || i.added_at) %></td></tr>
-  <% }) %><% if (!items.length) { %><tr><td colspan="5" class="muted">Пусто.</td></tr><% } %></tbody>
+  <% }) %><% if (!items.length) { %><tr><td colspan="6" class="muted">Пусто.</td></tr><% } %></tbody>
 </table></div>
 <%- include('../partials/footer') %>

@@ -25,7 +25,9 @@ Object.assign(module.exports, {
   discovery: process.env.DISCOVERY !== 'false',
   discoveryMinSubscribers: Number(process.env.DISCOVERY_MIN_SUBSCRIBERS || 1000),
   autoApproveDiscovered: process.env.AUTO_APPROVE_DISCOVERED !== 'false',
-  discoveryQueueLimit: Number(process.env.DISCOVERY_QUEUE_LIMIT || 5000),
+  discoveryQueueLimit: Number(process.env.DISCOVERY_QUEUE_LIMIT || 20000),
+  // Сколько страниц истории (по ~20 постов) паук листает у каждого канала
+  crawlMaxPages: Number(process.env.CRAWL_MAX_PAGES || 50),
   // Загружать стартовый список популярных каналов (src/starter-channels.txt)
   starterList: process.env.STARTER_LIST !== 'false',
 });

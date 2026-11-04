@@ -25,6 +25,8 @@ const pages = {
   'https://t.me/newchan1': page('newchan1', 'New One', '5 432 subscribers', 'Футбол Ташкента'),
   'https://t.me/newchan2': page('newchan2', 'Tiny', '120 subscribers'),
   'https://t.me/fwdsource': page('fwdsource', 'Source', '12 345 members, 100 online', 'Python dasturlash va IT yangiliklar'),
+  'https://t.me/s/goodchan?before=100': '<div class="tgme_widget_message_wrap"><div class="tgme_widget_message" data-post="goodchan/50"><div class="tgme_widget_message_text">Eski post @deepchan</div><span class="tgme_widget_message_views">9K</span><time datetime="2026-01-01T10:00:00+00:00"></time></div></div>',
+  'https://t.me/deepchan': page('deepchan', 'Deep', '8 000 subscribers', "Samarqand yangiliklari va e'lonlar"),
   'https://t.me/ruchan': page('ruchan', 'Russian News', '50 000 subscribers', 'Главные новости России'),
   'https://t.me/+PrivAteHash12345': page('x', 'Закрытый клуб', '3 210 subscribers', 'Закрытый канал для подписчиков из Самарканда'),
   'https://t.me/someuser': page('someuser', 'Some User', '@someuser'),
@@ -89,6 +91,14 @@ global.fetch = async (url) => {
   console.log('spike:', r.score, r.reasons.map((x) => x.text));
   assert.ok(r.reasons.some((x) => x.text.startsWith('Резкий прирост')));
   assert.ok(r.reasons.some((x) => x.text.startsWith('После скачка')));
+
+  // Паук: листает историю goodchan и находит канал в старом посте
+  const { crawlStep } = require(R + 'crawler');
+  while (await crawlStep()) {}
+  while (await importer.processOne()) {}
+  assert.equal(ch('deepchan')?.status, 'approved', 'паук нашёл канал в старых постах');
+  assert.equal(ch('goodchan').crawl_done, 1);
+  console.log('crawl:', require(R + 'crawler').crawlStats());
 
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);

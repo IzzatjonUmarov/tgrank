@@ -161,8 +161,9 @@ router.get('/import', (req, res) => {
   res.render('admin/import', {
     title: 'Импорт каналов',
     queue: importer.queueStats(),
+    crawl: require('../crawler').crawlStats(),
     status,
-    items: db.all(`SELECT * FROM import_queue WHERE status = ? ORDER BY COALESCE(processed_at, added_at) DESC LIMIT 200`, status),
+    items: db.all(`SELECT * FROM import_queue WHERE status = ? ORDER BY ${status === 'queued' ? "CASE source WHEN 'admin' THEN 0 WHEN 'seed' THEN 1 ELSE 2 END, mentions DESC, added_at" : 'COALESCE(processed_at, added_at) DESC'} LIMIT 200`, status),
   });
 });
 router.post('/import', (req, res) => {

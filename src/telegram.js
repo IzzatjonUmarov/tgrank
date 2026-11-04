@@ -140,8 +140,9 @@ function checkTelegramAuth(data) {
 
 // Последние посты канала с публичной страницы t.me/s/<username>.
 // Возвращает null, если у канала нет веб-превью (группы, боты, закрытые).
-async function fetchPosts(username) {
-  const html = await tmeGet(`s/${username}`);
+// before — листать историю: посты с номером меньше указанного
+async function fetchPosts(username, before = null) {
+  const html = await tmeGet(`s/${username}${before ? `?before=${before}` : ''}`);
   if (!/tgme_widget_message_wrap/.test(html)) return null;
 
   const counter = html.match(/<span class="counter_value">([^<]+)<\/span>\s*<span class="counter_type">(subscribers?|members?)<\/span>/i);

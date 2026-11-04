@@ -130,6 +130,11 @@ addColumn('channels', 'is_uz', 'INTEGER');
 addColumn('channels', 'is_private', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('channels', 'invite_link', 'TEXT');
 addColumn('import_queue', 'region_check', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('import_queue', 'mentions', 'INTEGER NOT NULL DEFAULT 1');
+addColumn('channels', 'crawl_before', 'INTEGER');
+addColumn('channels', 'crawl_pages', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('channels', 'crawl_done', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('channels', 'crawled_at', 'TEXT');
 addColumn('stats', 'avg_reach', 'INTEGER');
 addColumn('stats', 'err', 'REAL');
 

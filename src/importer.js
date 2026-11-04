@@ -7,8 +7,8 @@ const config = require('./config');
 const { parseUsername, fetchChannelInfo, fetchPosts } = require('./telegram');
 const { recordStats } = require('./channels');
 const { guessCategoryId, guessLanguage, isUzbekMarket } = require('./classify');
-const { syncChannel } = require('./sync');
-const { analyze } = require('./analysis');
+const { applyPage } = require('./sync');
+const { crawlStep } = require('./crawler');
 
 let stopped = false;
 
@@ -50,7 +50,7 @@ function enqueueStarterList() {
 async function processOne() {
   // Ручной импорт и стартовый список идут раньше автопоиска
   const item = db.get(`SELECT * FROM import_queue WHERE status = 'queued'
-    ORDER BY CASE source WHEN 'admin' THEN 0 WHEN 'seed' THEN 1 ELSE 2 END, added_at LIMIT 1`);
+    ORDER BY CASE source WHEN 'admin' THEN 0 WHEN 'seed' THEN 1 ELSE 2 END, mentions DESC, added_at LIMIT 1`);
   if (!item) return false;
   const finish = (status, error = null) =>
     db.run(`UPDATE import_queue SET status = ?, error = ?, attempts = attempts + 1, processed_at = datetime('now') WHERE username = ?`, status, error, item.username);
@@ -71,12 +71,9 @@ async function processOne() {
     finish('skipped', `меньше ${config.discoveryMinSubscribers} подписчиков`); return true;
   }
 
-  // Только узбекский рынок: если по профилю непонятно, смотрим тексты постов
-  let uz = isUzbekMarket(info);
-  if (!uz.ok && info.type === 'channel') {
-    const page = await fetchPosts(info.username).catch(() => null);
-    if (page) uz = isUzbekMarket(info, page.text);
-  }
+  // Посты загружаем один раз: по ним проверяем регион, считаем охваты и ищем новые каналы
+  const page = info.type === 'channel' ? await fetchPosts(info.username).catch(() => null) : null;
+  const uz = isUzbekMarket(info, page?.text);
   if (config.region === 'uz' && item.region_check && !uz.ok) { finish('skipped', 'не для узбекского рынка'); return true; }
 
   const status = item.approve ? 'approved' : 'pending';
@@ -87,16 +84,16 @@ async function processOne() {
   const id = Number(lastInsertRowid);
   recordStats(id, info.subscribers);
   finish('done');
-  if (info.type === 'channel') await syncChannel(db.get('SELECT * FROM channels WHERE id = ?', id)).catch(() => {});
   db.run(`UPDATE channels SET last_checked_at = datetime('now') WHERE id = ?`, id);
-  analyze(id);
+  applyPage(db.get('SELECT * FROM channels WHERE id = ?', id), info, page);
   return true;
 }
 
 async function runWorker() {
   while (!stopped) {
     let worked = false;
-    try { worked = await processOne(); } catch (e) { console.error('[import]', e.message); }
+    // Очередь пуста — паук листает историю каналов и находит новых кандидатов
+    try { worked = (await processOne()) || (await crawlStep()); } catch (e) { console.error('[import]', e.message); }
     await new Promise((r) => setTimeout(r, worked ? 200 : 15_000));
   }
 }
