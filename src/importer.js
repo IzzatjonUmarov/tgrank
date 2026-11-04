@@ -66,7 +66,8 @@ async function processOne() {
   }
   if (!info) { finish('failed', 'не найден в Telegram'); return true; }
   if (info.type === 'user') { finish('skipped', 'личный аккаунт'); return true; }
-  if (item.source === 'discovery' && info.type !== 'bot' && info.subscribers < config.discoveryMinSubscribers) {
+  // Порог подписчиков для автопоиска и стартового списка: отсекает мелкие «двойники» известных каналов
+  if (item.source !== 'admin' && info.type !== 'bot' && info.subscribers < config.discoveryMinSubscribers) {
     finish('skipped', `меньше ${config.discoveryMinSubscribers} подписчиков`); return true;
   }
 

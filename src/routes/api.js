@@ -12,6 +12,8 @@ const pub = (c) => ({
   avatar: c.avatar_url, category: c.category_slug, language: c.language, subscribers: c.subscribers,
   growth: { day: c.growth_day, week: c.growth_week, month: c.growth_month },
   votes: c.votes, rating: Number(c.rating_avg.toFixed(2)), reviews: c.rating_count,
+  avg_reach: c.avg_reach, err: c.err, posts_per_day: c.posts_per_day, engagement: c.engagement,
+  fraud: { score: c.fraud_score, reasons: JSON.parse(c.fraud_reasons || '[]').map((r) => r.text) },
   owner_verified: !!c.owner_id, boosted: !!c.boosted,
 });
 

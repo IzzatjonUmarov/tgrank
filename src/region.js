@@ -1,5 +1,6 @@
 // Каталог только для узбекского рынка: поиск и удаление остальных каналов
 const db = require('./db');
+const config = require('./config');
 const { isUzbekMarket } = require('./classify');
 
 function nonUzbek() {
@@ -23,6 +24,14 @@ function removeChannels(items) {
 // При запуске: убрать неузбекские каналы из стартового списка и автопоиска. Каналы, добавленные людьми, остаются для модератора.
 function cleanupOnStart() {
   const removed = removeChannels(nonUzbek().filter((c) => !c.added_by));
+  // Мелкие каналы из стартового списка, попавшие до введения порога подписчиков
+  const small = db.all(`SELECT c.id, c.username FROM channels c JOIN import_queue q ON q.username = c.username
+    WHERE q.source = 'seed' AND c.added_by IS NULL AND c.type != 'bot' AND c.subscribers < ?`, config.discoveryMinSubscribers);
+  for (const c of small) {
+    db.run('DELETE FROM channels WHERE id = ?', c.id);
+    db.run(`UPDATE import_queue SET status = 'skipped', error = ? WHERE username = ?`, `меньше ${config.discoveryMinSubscribers} подписчиков`, c.username);
+  }
+  if (small.length) console.log(`[region] удалено мелких каналов из стартового списка: ${small.length}`);
   if (removed) console.log(`[region] удалено каналов не для Узбекистана: ${removed}`);
 }
 
