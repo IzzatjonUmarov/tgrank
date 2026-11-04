@@ -2,11 +2,13 @@ const express = require('express');
 const db = require('../db');
 const config = require('../config');
 const ch = require('../channels');
-const { parseUsername, fetchChannelInfo } = require('../telegram');
+const crypto = require('node:crypto');
+const { parseUsername, parseInvite, fetchChannelInfo, fetchInviteInfo } = require('../telegram');
+const { isUzbekMarket } = require('../classify');
 const { requireUser } = require('./guards');
 const { TYPES, LANGUAGES } = require('../helpers');
 const { fraudLevel, dailyDeltas, analyze } = require('../analysis');
-const { syncChannel, syncPosts } = require('../sync');
+const { syncChannel, syncPosts, fetchProfile } = require('../sync');
 
 const REFRESH_MINUTES = 30;
 function canRefresh(channel) {
@@ -19,7 +21,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const top = (type, sort = 'subscribers') => ch.list({ type, sort, perPage: 10 }).items;
   res.render('home', {
-    title: 'Каталог и рейтинг Telegram-каналов',
+    title: config.region === 'uz' ? 'Каталог и рейтинг Telegram-каналов Узбекистана' : 'Каталог и рейтинг Telegram-каналов',
     stats: ch.siteStats(),
     boosted: ch.boosted(8),
     topChannels: top('channel'),
@@ -205,10 +207,14 @@ router.post('/c/:username/verify', requireUser, async (req, res, next) => {
     const c = ch.byUsername(req.params.username);
     if (!c || c.owner_id) return res.redirect(c ? `/c/${c.username}` : '/');
     const code = ch.verifyCode(c.id, req.user.id);
-    const info = await fetchChannelInfo(c.username).catch(() => null);
+    const info = await fetchProfile(c).catch(() => null);
     if (info && info.description.includes(code)) {
       db.run('UPDATE channels SET owner_id = ? WHERE id = ? AND owner_id IS NULL', req.user.id, c.id);
-      req.flash('success', 'Владение подтверждено! Код из описания можно удалить.');
+      if (c.status === 'draft') {
+        const next = req.user.role === 'admin' ? 'approved' : 'pending';
+        db.run(`UPDATE channels SET status = ?, approved_at = ${next === 'approved' ? "datetime('now')" : 'NULL'} WHERE id = ?`, next, c.id);
+      }
+      req.flash('success', c.status === 'draft' ? 'Владение подтверждено! Канал отправлен на модерацию. Код из описания можно удалить.' : 'Владение подтверждено! Код из описания можно удалить.');
       return res.redirect(`/c/${c.username}`);
     }
     req.flash('error', info ? 'Код не найден в описании. Telegram обновляет страницу с задержкой — попробуйте через минуту.' : 'Не удалось получить данные канала из Telegram.');
@@ -223,37 +229,57 @@ router.post('/add', requireUser, async (req, res, next) => {
     const form = {
       link: String(req.body.link || ''),
       category_id: parseInt(req.body.category_id, 10) || null,
-      language: LANGUAGES[req.body.language] ? req.body.language : 'ru',
+      language: LANGUAGES[req.body.language] ? req.body.language : 'uz',
       tags: String(req.body.tags || '').slice(0, 200),
+      consent: req.body.consent === '1',
     };
     const fail = (error) => res.status(400).render('add', { title: 'Добавить канал', error, form });
-    const username = parseUsername(form.link);
-    if (!username) return fail('Укажите ссылку вида https://t.me/username или @username. Приватные ссылки-приглашения не поддерживаются.');
-    const existing = db.get('SELECT username, status FROM channels WHERE username = ?', username);
-    if (existing) return fail(existing.status === 'approved' ? `@${username} уже есть в каталоге.` : `@${username} уже добавлен и ожидает модерации.`);
+    const invite = parseInvite(form.link);
+    const username = invite ? null : parseUsername(form.link);
+    if (!invite && !username) return fail('Укажите ссылку вида https://t.me/username, @username или ссылку-приглашение частного канала https://t.me/+…');
+    if (username) {
+      const existing = db.get('SELECT username, status FROM channels WHERE username = ?', username);
+      if (existing) return fail(existing.status === 'approved' ? `@${username} уже есть в каталоге.` : `@${username} уже добавлен и ожидает модерации.`);
+    }
+    if (invite) {
+      const existing = db.get('SELECT username FROM channels WHERE invite_link = ?', invite);
+      if (existing) return fail('Этот частный канал уже добавлен.');
+      if (!form.consent) return fail('Подтвердите, что вы владелец канала и согласны опубликовать ссылку-приглашение в каталоге.');
+    }
     if (!form.category_id || !db.get('SELECT 1 FROM categories WHERE id = ?', form.category_id)) return fail('Выберите категорию.');
 
-    const pending = db.get(`SELECT COUNT(*) AS n FROM channels WHERE added_by = ? AND status = 'pending'`, req.user.id).n;
+    const pending = db.get(`SELECT COUNT(*) AS n FROM channels WHERE added_by = ? AND status IN ('pending', 'draft')`, req.user.id).n;
     if (pending >= 20 && req.user.role !== 'admin') return fail('У вас слишком много каналов на модерации. Дождитесь проверки.');
 
+    // Частный канал: служебный адрес на сайте вместо username
+    const slug = username || 'private_' + crypto.randomBytes(5).toString('hex');
     let info;
-    try { info = await fetchChannelInfo(username); } catch { info = undefined; }
-    if (info === null) return fail(`Публичный канал, группа или бот @${username} не найден в Telegram.`);
+    try { info = invite ? await fetchInviteInfo(invite, slug) : await fetchChannelInfo(username); } catch { info = undefined; }
+    if (info === null) return fail(invite ? 'Ссылка-приглашение недействительна или просрочена. Создайте постоянную ссылку в настройках канала.' : `Публичный канал, группа или бот @${username} не найден в Telegram.`);
     if (info && info.type === 'user') return fail('Это личный аккаунт. Добавлять можно только каналы, группы и ботов.');
+    if (!info && invite) return fail('Не удалось получить данные канала из Telegram. Попробуйте позже.');
     info = info || { username, title: '@' + username, description: '', avatar_url: null, type: /bot$/i.test(username) ? 'bot' : 'channel', subscribers: 0, tg_verified: 0 };
 
-    const status = req.user.role === 'admin' ? 'approved' : 'pending';
-    const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, tags, subscribers, tg_verified, status, added_by, last_checked_at, approved_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
-      username, info.type, info.title, info.description, info.avatar_url, form.category_id, form.language, form.tags, info.subscribers, info.tg_verified, status, req.user.id);
-    ch.recordStats(Number(lastInsertRowid), info.subscribers);
-    if (info.type === 'channel') {
-      await syncPosts(Number(lastInsertRowid), username).catch(() => {});
-      analyze(Number(lastInsertRowid));
-    }
+    const isAdmin = req.user.role === 'admin';
+    const uz = isAdmin || isUzbekMarket(info).ok;
+    // Частный канал публикуется только после подтверждения владельца (статус draft до проверки кода)
+    const status = invite ? 'draft' : isAdmin ? 'approved' : 'pending';
+    const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, tags, subscribers, tg_verified, status, added_by, is_uz, is_private, invite_link, last_checked_at, approved_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
+      slug, info.type, info.title, info.description, info.avatar_url, form.category_id, form.language, form.tags, info.subscribers, info.tg_verified,
+      status, req.user.id, uz ? 1 : 0, invite ? 1 : 0, invite);
+    const id = Number(lastInsertRowid);
+    ch.recordStats(id, info.subscribers);
+    if (info.type === 'channel' && !invite) await syncPosts(id, username).catch(() => {});
+    analyze(id);
 
-    req.flash('success', status === 'approved' ? 'Канал добавлен.' : 'Канал отправлен на модерацию. Обычно проверка занимает до 24 часов.');
-    res.redirect(`/c/${username}`);
+    if (invite) {
+      req.flash('info', 'Канал сохранён как черновик. Подтвердите, что вы владелец, — после этого он уйдёт на модерацию.');
+      return res.redirect(`/c/${slug}/claim`);
+    }
+    req.flash('success', status === 'approved' ? 'Канал добавлен.' : 'Канал отправлен на модерацию. Обычно проверка занимает до 24 часов.' +
+      (config.region === 'uz' && !uz ? ' Каталог принимает каналы для узбекского рынка — укажите в описании, что канал связан с Узбекистаном, это ускорит проверку.' : ''));
+    res.redirect(`/c/${slug}`);
   } catch (e) { next(e); }
 });
 

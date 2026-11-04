@@ -1,7 +1,7 @@
 <%- include('partials/header') %>
 <section class="hero">
-  <h1>Каталог и рейтинг Telegram-каналов, групп и ботов</h1>
-  <p class="muted">Ищите лучшие каналы, следите за ростом подписчиков, голосуйте и продвигайте свой канал — бесплатно.</p>
+  <h1><% if (config.region === 'uz') { %>🇺🇿 Каталог и рейтинг Telegram-каналов Узбекистана<% } else { %>Каталог и рейтинг Telegram-каналов, групп и ботов<% } %></h1>
+  <p class="muted">Ищите лучшие каналы, следите за ростом подписчиков и охватами, проверяйте на накрутку и продвигайте свой канал — бесплатно. Можно добавить и частный канал.</p>
   <form class="hero-search" action="/search">
     <input name="q" placeholder="Например: новости, крипта, программирование…" autofocus>
     <select name="type"><option value="">Все</option><option value="channel">Каналы</option><option value="group">Группы</option><option value="bot">Боты</option></select>

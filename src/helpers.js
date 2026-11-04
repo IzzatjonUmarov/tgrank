@@ -17,7 +17,7 @@ function delta(n) {
 }
 const TYPES = { channel: 'Канал', group: 'Группа', bot: 'Бот' };
 const TYPES_PLURAL = { channel: 'Каналы', group: 'Группы', bot: 'Боты' };
-const LANGUAGES = { ru: 'Русский', uz: 'Oʻzbekcha', en: 'English', uk: 'Українська', kk: 'Қазақша', ky: 'Кыргызча', tg: 'Тоҷикӣ', az: 'Azərbaycan', other: 'Другой' };
+const LANGUAGES = { uz: 'Oʻzbekcha', ru: 'Русский', en: 'English', uk: 'Українська', kk: 'Қазақша', ky: 'Кыргызча', tg: 'Тоҷикӣ', az: 'Azərbaycan', other: 'Другой' };
 
 function stars(avg) {
   const full = Math.round(Number(avg || 0));
@@ -42,4 +42,12 @@ function avatarColor(s) {
   return `hsl(${h} 55% 50%)`;
 }
 
-module.exports = { num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };
+// Как показывать канал: у частных нет username, ссылка — приглашение
+function handle(c) {
+  return c.is_private ? '🔒 частный канал' : '@' + c.username;
+}
+function tgLink(c) {
+  return c.is_private ? c.invite_link : `https://t.me/${c.username}`;
+}
+
+module.exports = { handle, tgLink, num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };

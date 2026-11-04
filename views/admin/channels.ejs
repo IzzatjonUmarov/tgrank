@@ -12,7 +12,7 @@
   <tbody>
   <% result.items.forEach((c) => { %>
   <tr>
-    <td><a class="tcell" href="/c/<%= c.username %>" target="_blank"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted">@<%= c.username %> · <%= h.TYPES[c.type] %> · <%= c.language %></small></span></a>
+    <td><a class="tcell" href="/c/<%= c.username %>" target="_blank"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted"><%= h.handle(c) %> · <%= h.TYPES[c.type] %> · <%= c.language %></small></span></a>
       <div class="small muted clamp"><%= c.description %></div></td>
     <td><form method="post" action="/admin/channels/<%= c.id %>/category"><input type="hidden" name="_csrf" value="<%= csrf %>">
       <select name="category_id" onchange="this.form.submit()"><option value="">—</option><% categories.forEach((cat) => { %><option value="<%= cat.id %>" <%= c.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option><% }) %></select></form></td>

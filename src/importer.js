@@ -4,15 +4,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('./db');
 const config = require('./config');
-const { parseUsername, fetchChannelInfo } = require('./telegram');
+const { parseUsername, fetchChannelInfo, fetchPosts } = require('./telegram');
 const { recordStats } = require('./channels');
-const { guessCategoryId, guessLanguage } = require('./classify');
+const { guessCategoryId, guessLanguage, isUzbekMarket } = require('./classify');
 const { syncPosts } = require('./sync');
 const { analyze } = require('./analysis');
 
 let stopped = false;
 
-function enqueue(lines, { source = 'admin', categoryId = null, approve = true } = {}) {
+function enqueue(lines, { source = 'admin', categoryId = null, approve = true, regionCheck = true } = {}) {
   let added = 0, skipped = 0;
   const seen = new Set();
   for (const line of lines) {
@@ -21,22 +21,30 @@ function enqueue(lines, { source = 'admin', categoryId = null, approve = true } 
     seen.add(username.toLowerCase());
     if (db.get('SELECT 1 FROM channels WHERE username = ?', username)) { skipped++; continue; }
     // Повторный импорт вручную возвращает в очередь ранее отклонённые автопоиском
-    const r = db.run(`INSERT INTO import_queue (username, source, category_id, approve) VALUES (?, ?, ?, ?)
+    const r = db.run(`INSERT INTO import_queue (username, source, category_id, approve, region_check) VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(username) DO UPDATE SET status = 'queued', source = excluded.source, category_id = excluded.category_id,
-        approve = excluded.approve, error = NULL, attempts = 0
+        approve = excluded.approve, region_check = excluded.region_check, error = NULL, attempts = 0
       WHERE import_queue.status != 'queued' AND excluded.source != 'seed'`,
-      username, source, categoryId, approve ? 1 : 0);
+      username, source, categoryId, approve ? 1 : 0, regionCheck ? 1 : 0);
     if (r.changes) added++; else skipped++;
   }
   return { added, skipped };
 }
 
-function enqueueStarterList() {
+function starterList() {
   const file = path.join(__dirname, 'starter-channels.txt');
-  if (!fs.existsSync(file)) return;
-  const lines = fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  if (!fs.existsSync(file)) return [];
+  return fs.readFileSync(file, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+}
+
+function enqueueStarterList() {
+  const lines = starterList();
+  // Заявки из прежних версий стартового списка больше не нужны
+  const keep = new Set(lines.map((l) => l.toLowerCase()));
+  const old = db.all(`SELECT username FROM import_queue WHERE status = 'queued' AND source = 'seed'`).filter((r) => !keep.has(r.username.toLowerCase()));
+  for (const r of old) db.run(`UPDATE import_queue SET status = 'skipped', error = 'убран из стартового списка' WHERE username = ?`, r.username);
   const r = enqueue(lines, { source: 'seed' });
-  if (r.added) console.log(`[import] стартовый список: в очереди ${r.added}`);
+  if (r.added || old.length) console.log(`[import] стартовый список: в очереди ${r.added}, снято старых заявок: ${old.length}`);
 }
 
 async function processOne() {
@@ -62,11 +70,19 @@ async function processOne() {
     finish('skipped', `меньше ${config.discoveryMinSubscribers} подписчиков`); return true;
   }
 
+  // Только узбекский рынок: если по профилю непонятно, смотрим тексты постов
+  let uz = isUzbekMarket(info);
+  if (!uz.ok && info.type === 'channel') {
+    const page = await fetchPosts(info.username).catch(() => null);
+    if (page) uz = isUzbekMarket(info, page.text);
+  }
+  if (config.region === 'uz' && item.region_check && !uz.ok) { finish('skipped', 'не для узбекского рынка'); return true; }
+
   const status = item.approve ? 'approved' : 'pending';
-  const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, subscribers, tg_verified, status, last_checked_at, approved_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
+  const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, subscribers, tg_verified, status, is_uz, last_checked_at, approved_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
     info.username, info.type, info.title, info.description, info.avatar_url,
-    item.category_id || guessCategoryId(info), guessLanguage(info), info.subscribers, info.tg_verified, status);
+    item.category_id || guessCategoryId(info), guessLanguage(info), info.subscribers, info.tg_verified, status, uz.ok ? 1 : 0);
   const id = Number(lastInsertRowid);
   recordStats(id, info.subscribers);
   finish('done');

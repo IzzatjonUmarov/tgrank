@@ -1,24 +1,34 @@
 // Полная синхронизация одного канала: профиль, посты, аналитика и поиск новых каналов в постах
 const db = require('./db');
 const config = require('./config');
-const { fetchChannelInfo, fetchPosts } = require('./telegram');
+const { fetchChannelInfo, fetchInviteInfo, fetchPosts } = require('./telegram');
 const { applyInfo } = require('./channels');
 const { savePosts, analyze } = require('./analysis');
+const { isUzbekMarket } = require('./classify');
+
+// Профиль канала: публичный — по username, частный — по пригласительной ссылке
+function fetchProfile(channel) {
+  return channel.is_private ? fetchInviteInfo(channel.invite_link, channel.username) : fetchChannelInfo(channel.username);
+}
 
 async function syncChannel(channel) {
-  const info = await fetchChannelInfo(channel.username);
-  if (!info) return { ok: false, error: 'канал не найден в Telegram' };
+  const info = await fetchProfile(channel);
+  if (!info) return { ok: false, error: channel.is_private ? 'ссылка-приглашение недействительна' : 'канал не найден в Telegram' };
   applyInfo(channel.id, info);
 
-  if (info.type === 'channel') await syncPosts(channel.id, channel.username);
+  // У частных каналов нет веб-просмотра постов — только подписчики
+  const page = info.type === 'channel' && !channel.is_private ? await syncPosts(channel.id, channel.username) : null;
+  // «Это UZ», отмеченное модератором, не сбрасывается
+  db.run('UPDATE channels SET is_uz = CASE WHEN is_uz = 1 THEN 1 ELSE ? END WHERE id = ?', isUzbekMarket(info, page?.text).ok ? 1 : 0, channel.id);
   return { ok: true, info, analysis: analyze(channel.id) };
 }
 
 async function syncPosts(channelId, username) {
   const page = await fetchPosts(username).catch(() => null);
-  if (!page) return;
+  if (!page) return null;
   savePosts(channelId, page.posts);
   if (config.discovery) enqueueDiscovered(page.mentions);
+  return page;
 }
 
 // Упомянутые и репостнутые каналы попадают в очередь импорта
@@ -32,4 +42,4 @@ function enqueueDiscovered(usernames) {
   }
 }
 
-module.exports = { syncChannel, syncPosts };
+module.exports = { syncChannel, syncPosts, fetchProfile };

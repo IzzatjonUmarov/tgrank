@@ -2,12 +2,13 @@
 const express = require('express');
 const db = require('../db');
 const ch = require('../channels');
+const { tgLink } = require('../helpers');
 
 const router = express.Router();
 router.use((req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); });
 
 const pub = (c) => ({
-  username: c.username, link: `https://t.me/${c.username}`, type: c.type, title: c.title, description: c.description,
+  username: c.is_private ? null : c.username, id: c.username, private: !!c.is_private, link: tgLink(c), type: c.type, title: c.title, description: c.description,
   avatar: c.avatar_url, category: c.category_slug, language: c.language, subscribers: c.subscribers,
   growth: { day: c.growth_day, week: c.growth_week, month: c.growth_month },
   votes: c.votes, rating: Number(c.rating_avg.toFixed(2)), reviews: c.rating_count,

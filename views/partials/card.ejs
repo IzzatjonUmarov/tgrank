@@ -3,7 +3,7 @@
     <%- include('avatar', { c, size: 'md' }) %>
     <div class="card-titles">
       <div class="card-title"><%= c.title %><% if (c.tg_verified) { %> <span class="tick">✔</span><% } %></div>
-      <div class="muted small">@<%= c.username %></div>
+      <div class="muted small"><%= h.handle(c) %></div>
     </div>
   </div>
   <p class="card-desc"><%= (c.description || '').slice(0, 140) %></p>

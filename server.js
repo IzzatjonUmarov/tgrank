@@ -70,6 +70,7 @@ if (require.main === module) {
   app.listen(config.port, () => console.log(`${config.siteName} запущен на порту ${config.port}, BASE_URL=${config.baseUrl}`));
   if (process.env.DISABLE_IMPORT !== '1') {
     const importer = require('./src/importer');
+    if (config.region === 'uz') require('./src/region').cleanupOnStart();
     if (config.starterList) importer.enqueueStarterList();
     importer.runWorker();
   }

@@ -18,13 +18,15 @@
         <textarea name="list" rows="10" required placeholder="@kunuzofficial&#10;https://t.me/daryo&#10;gazetauz"></textarea></label>
       <label>Категория<select name="category_id"><option value="">Определить автоматически</option><% categories.forEach((c) => { %><option value="<%= c.id %>"><%= c.icon %> <%= c.name %></option><% }) %></select></label>
       <label class="check"><input type="checkbox" name="approve" value="1" checked> Сразу публиковать (без модерации)</label>
+      <label class="check"><input type="checkbox" name="region_check" value="1" checked> Только каналы для узбекского рынка (остальные пропускать)</label>
       <button class="btn btn-primary">Добавить в очередь</button>
     </form>
   </section>
   <section class="panel">
     <h2>Как наполняется база</h2>
     <ul class="small">
-      <li><b>Стартовый список</b> — около 120 популярных каналов, групп и ботов ставятся в очередь при запуске сервера.</li>
+      <li><b>Только Узбекистан</b> — <%= config.region === 'uz' ? 'включено' : 'выключено' %>. Канал проходит, если он на узбекском языке или явно связан с Узбекистаном: города, домены .uz, +998, «uz» в username, посты про Узбекистан. Русскоязычные узбекские каналы тоже проходят.</li>
+      <li><b>Стартовый список</b> — около 100 узбекских каналов ставятся в очередь при запуске сервера.</li>
       <li><b>Автопоиск</b> — <%= config.discovery ? 'включён' : 'выключен' %>. Каналы, которые упоминаются или репостятся в постах каналов из каталога, автоматически проверяются и добавляются, если у них от <%= h.num(config.discoveryMinSubscribers) %> подписчиков.</li>
       <li><b>Ваш список</b> — проверяется раньше автопоиска. Категория и язык определяются по названию и описанию, их можно поменять в списке каналов.</li>
       <li>Один запрос к Telegram примерно раз в 1,5 секунды, чтобы не получить блокировку: около 1000 каналов в час.</li>

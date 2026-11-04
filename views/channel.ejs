@@ -3,7 +3,8 @@
 
 <% if (channel.status !== 'approved') { %>
   <div class="flash flash-<%= channel.status === 'rejected' ? 'error' : 'info' %>">
-    <%= channel.status === 'pending' ? 'Канал на модерации — он виден только вам и администраторам.' : 'Канал отклонён модератором.' %><% if (channel.reject_reason) { %> Причина: <%= channel.reject_reason %><% } %>
+    <%= { pending: 'Канал на модерации — он виден только вам и администраторам.', draft: 'Черновик: подтвердите, что вы владелец канала, — после этого он уйдёт на модерацию.', rejected: 'Канал отклонён модератором.' }[channel.status] %>
+    <% if (channel.status === 'draft') { %> <a href="/c/<%= channel.username %>/claim">Подтвердить владение →</a><% } %><% if (channel.reject_reason) { %> Причина: <%= channel.reject_reason %><% } %>
   </div>
 <% } %>
 
@@ -11,13 +12,13 @@
   <%- include('partials/avatar', { c: channel, size: 'lg' }) %>
   <div class="ch-info">
     <h1><%= channel.title %><% if (channel.tg_verified) { %> <span class="tick" title="Верифицирован Telegram">✔</span><% } %></h1>
-    <div class="muted">@<%= channel.username %> · <%= h.TYPES[channel.type] %> · <%= h.LANGUAGES[channel.language] || channel.language %>
+    <div class="muted"><%= h.handle(channel) %> · <%= h.TYPES[channel.type] %> · <%= h.LANGUAGES[channel.language] || channel.language %>
       <% if (channel.owner_id) { %> · <span class="badge ok">✔ владелец подтверждён</span><% } %>
       <% if (channel.boosted) { %> · <span class="badge boost">🚀 Продвигается</span><% } %></div>
     <p class="ch-desc"><%= channel.description %></p>
     <% if (channel.tags) { %><div class="tags"><% channel.tags.split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => { %><a href="/search?q=<%= encodeURIComponent(t) %>">#<%= t %></a><% }) %></div><% } %>
     <div class="ch-actions">
-      <a class="btn btn-primary" href="https://t.me/<%= channel.username %>" target="_blank" rel="noopener nofollow">Открыть в Telegram</a>
+      <a class="btn btn-primary" href="<%= h.tgLink(channel) %>" target="_blank" rel="noopener nofollow">Открыть в Telegram</a>
       <% if (channel.status === 'approved') { %>
       <form method="post" action="/c/<%= channel.username %>/vote"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= votedToday ? 'btn-ghost' : 'btn-accent' %>" <%= votedToday ? 'disabled' : '' %>>👍 <%= votedToday ? 'Вы голосовали' : 'Голосовать' %> · <%= channel.votes %></button></form>
       <form method="post" action="/c/<%= channel.username %>/favorite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost"><%= isFav ? '★ В избранном' : '☆ В избранное' %></button></form>
@@ -63,7 +64,9 @@
         <div class="kpi" title="Реакции / просмотры"><span>Вовлечённость</span><b><%= channel.engagement != null ? channel.engagement + '%' : '—' %></b><small>реакции к просмотрам</small></div>
         <div class="kpi"><span>Риск накрутки</span><b class="risk-<%= fraud.key %>"><%= channel.analyzed_at ? channel.fraud_score + '/100' : '—' %></b><small><%= channel.analyzed_at ? (fraud.key === 'ok' ? 'признаков нет' : fraud.label.toLowerCase()) : 'ещё не анализировался' %></small></div>
       </div>
-      <% if (channel.type !== 'channel') { %>
+      <% if (channel.is_private) { %>
+        <p class="muted small">🔒 Частный канал: Telegram не показывает его посты снаружи, поэтому анализируются подписчики и их динамика (в том числе резкие скачки).</p>
+      <% } else if (channel.type !== 'channel') { %>
         <p class="muted small">Охваты доступны только для каналов с открытым веб-просмотром. Для <%= channel.type === 'group' ? 'групп' : 'ботов' %> анализируется только динамика участников.</p>
       <% } else if (!posts.length) { %>
         <p class="muted small">Посты пока не загружены: у канала может быть закрыт веб-просмотр (t.me/s/<%= channel.username %>), или данные ещё не обновлялись.</p>

@@ -9,7 +9,7 @@ const page = (u, title, extra, desc = 'Новости Ташкента и Узб
 <div class="tgme_page_extra">${extra}</div><div class="tgme_page_description" dir="auto">${desc}</div>
 <img class="tgme_page_photo_image" src="https://cdn.example/${u}.jpg">`;
 const post = (u, id, views, date, extra = '') => `<div class="tgme_widget_message_wrap js-widget_message_wrap"><div class="tgme_widget_message js-widget_message" data-post="${u}/${id}">
-${extra}<div class="tgme_widget_message_text js-message_text">Текст <a href="https://t.me/newchan1">ссылка</a> и @newchan2</div>
+${extra}<div class="tgme_widget_message_text js-message_text">Текст <a href="https://t.me/newchan1">ссылка</a> и @newchan2, @ruchan</div>
 <div class="tgme_widget_message_reactions"><span class="tgme_reaction"><i class="emoji"><b>👍</b></i>12</span><span class="tgme_reaction"><i class="emoji"><b>🔥</b></i>1.2K</span></div>
 <div class="tgme_widget_message_info"><span class="tgme_widget_message_views">${views}</span><span class="copyonly">views</span>
 <span class="tgme_widget_message_meta"><a class="tgme_widget_message_date" href="https://t.me/${u}/${id}"><time datetime="${date}" class="time">10:00</time></a></span></div></div></div>`;
@@ -19,12 +19,14 @@ const pages = {
   'https://t.me/goodchan': page('goodchan', 'Good Channel', '120 345 subscribers'),
   'https://t.me/s/goodchan': `<span class="counter_value">120K</span> <span class="counter_type">subscribers</span>` +
     Array.from({ length: 15 }, (_, i) => post('goodchan', 100 + i, ['18.2K', '25K', '31.4K', '14K', '22.9K'][i % 5], daysAgo(15 - i))).join(''),
-  'https://t.me/fakechan': page('fakechan', 'Fake Channel', '200 000 subscribers', 'Крипта airdrop'),
+  'https://t.me/fakechan': page('fakechan', 'Fake Channel', '200 000 subscribers', 'Крипта airdrop для Узбекистана'),
   'https://t.me/s/fakechan': Array.from({ length: 12 }, (_, i) => post('fakechan', 10 + i, '1.5K', daysAgo(12 - i),
       i === 3 ? '<div class="tgme_widget_message_forwarded_from">Forwarded from <a class="tgme_widget_message_forwarded_from_name" href="https://t.me/fwdsource"><span>Src</span></a></div>' : '')).join('') + '<div class="tgme_widget_message_wrap">',
-  'https://t.me/newchan1': page('newchan1', 'New One', '5 432 subscribers', 'Футбол и спорт'),
+  'https://t.me/newchan1': page('newchan1', 'New One', '5 432 subscribers', 'Футбол Ташкента'),
   'https://t.me/newchan2': page('newchan2', 'Tiny', '120 subscribers'),
-  'https://t.me/fwdsource': page('fwdsource', 'Source', '12 345 members, 100 online', 'Python разработка'),
+  'https://t.me/fwdsource': page('fwdsource', 'Source', '12 345 members, 100 online', 'Python dasturlash va IT yangiliklar'),
+  'https://t.me/ruchan': page('ruchan', 'Russian News', '50 000 subscribers', 'Главные новости России'),
+  'https://t.me/+PrivAteHash12345': page('x', 'Закрытый клуб', '3 210 subscribers', 'Закрытый канал для подписчиков из Самарканда'),
   'https://t.me/someuser': page('someuser', 'Some User', '@someuser'),
 };
 global.fetch = async (url) => {
@@ -57,6 +59,23 @@ global.fetch = async (url) => {
   assert.ok(!ch('newchan2'), 'маленький канал пропущен');
   assert.equal(ch('fwdsource')?.type, 'group', 'источник репоста найден');
   assert.ok(!ch('someuser'), 'личный аккаунт не добавлен');
+  assert.ok(!ch('ruchan'), 'российский канал не прошёл фильтр Узбекистана');
+  assert.equal(db.get(`SELECT error FROM import_queue WHERE username = 'ruchan'`).error, 'не для узбекского рынка');
+  assert.equal(ch('fwdsource').is_uz, 1, 'узбекский язык распознан');
+
+  // Частный канал: профиль по ссылке-приглашению, без постов
+  const tg = require(R + 'telegram');
+  const invite = tg.parseInvite('https://t.me/joinchat/PrivAteHash12345');
+  assert.equal(invite, 'https://t.me/+PrivAteHash12345');
+  const { lastInsertRowid: pid } = db.run(`INSERT INTO channels (username, title, status, is_private, invite_link) VALUES ('private_test', '?', 'approved', 1, ?)`, invite);
+  const ps = await syncChannel(db.get('SELECT * FROM channels WHERE id = ?', pid));
+  assert.ok(ps.ok);
+  const priv = db.get('SELECT * FROM channels WHERE id = ?', pid);
+  console.log('private:', priv.title, priv.subscribers, priv.type, priv.is_uz);
+  assert.equal(priv.subscribers, 3210);
+  assert.equal(priv.type, 'channel');
+  assert.equal(priv.is_uz, 1);
+  assert.equal(db.get('SELECT COUNT(*) n FROM posts WHERE channel_id = ?', pid).n, 0);
 
   // Скачок подписчиков: история 20 дней с ростом +50/день, затем +30 000 за сутки и отток
   db.run('DELETE FROM stats WHERE channel_id = ?', good.id);

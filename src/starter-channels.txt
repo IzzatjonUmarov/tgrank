@@ -1,129 +1,100 @@
-# Стартовый список: ставится в очередь импорта при запуске.
+# Стартовый список каналов узбекского рынка: ставится в очередь импорта при запуске.
 # Несуществующие username просто пропускаются. Дальше база растёт автопоиском
-# (каналы, которые упоминают и репостят каналы из каталога).
-# Узбекистан
+# (каналы, которые упоминают и репостят каналы из каталога), с фильтром по Узбекистану.
+# Новости и СМИ
 kunuzofficial
+kunuz
 daryo
+daryo_uz
 gazetauz
-uzbekistan24
 podrobnouz
+podrobno
 spotuz
-xushnudbek
 uzreport
+uzreportnews
 uzdaily
-qalampir
-darakchi
-anhoruz
-championat_asia
 uznews
-the_tashkent_times
-uzbekistan_airways
-uzinfocom
+qalampir
+qalampiruz
+darakchiuz
+anhoruz
+uza_uz
+uzanews
+sputnikuz
+sputniknewsuz
+repost_uz
+batafsil_uz
+zamonuz
+xabaruz
+aniquz
+kunuz_ru
+uzbekistan24
+uzbekistan24tv
+mtrk_uz
+sevimli_tv
+milliy_tv
+hook_report
+fergananews
+nuz_uz
+uzonline
+uzbekistan_news
+toshkent_news
 tashkent_news
-uzbek_tilida
-buxoro_news
 samarqand_news
-fergana_news
-review_uz
-mohirdev
+buxoro_news
+fargona_news
+namangan_news
+andijon_news
+# Официальные
+president_uz
+prezidentpressxizmati
+gov_uz
+uzgovuz
+mfa_uz
+cbu_uz
+uzbekistan_airways
+uzairways
+# Бизнес, финансы, IT
+spot_uz
+uzbekinvest
 uzum_market
+uzumuz
+uzumbank
 payme_uz
 click_uz
-# Новости и СМИ
-rian_ru
-tass_agency
-rbc_news
-meduzalive
-breakingmash
-bazabazon
-readovkanews
-topor
-varlamov_news
-kommersant
-forbesrussia
-bbcrussian
-dw_russian
-currenttime
-novaya_pishet
-istories_media
-lentachold
-izvestia
-# Бизнес и финансы
-banksta
-markettwits
-if_market_news
-cbrstocks
-russianmacro
-bitkogan
-proeconomics
-tinkoff_invest_official
-alfa_investments
-sberinvestments
-vcru
-rusbase
-# Технологии
-tginfo
-durov
-telegram
-habr_com
-rozetked
-iphones_ru
-ai_newz
-data_secrets
-techmedia
-denissexy
-exploitex
-hiaimedia
-pythonl
-javascriptv
-yandex
-# Крипто
-binance_announcements
-tonblockchain
-toncoin
-cointelegraph
-whale_alert_io
-notcoin
-the_open_network
-bitcoinmagazine
-coinmarketcap
-# Кино, спорт, развлечения
-kinopoisk
-sportsru
-matchtv
-championat
-rhymes
-leprasorium
-# Языки и образование
-englishdom
-skyeng
-lingualeo
-arzamas_academy
-postnauka
-# Боты
-BotFather
-gif
-vid
-pic
-bing
-wiki
-imdb
-youtube
-like
-vote
-bold
-sticker
-QuizBot
-gamee
-wallet
-CryptoBot
-PremiumBot
-DurgerKingBot
-SaveAsBot
-# Группы
-ru_python
-javascript_ru
-pythonru
-devops_ru
-golang_ru
-ru_docker
+kapitalbank
+tbcbankuz
+anorbank
+hamkorbank
+olx_uz
+texnomart_uz
+mediapark_uz
+korzinkauz
+beeline_uz
+ucell_official
+mobiuz_official
+uzmobile
+itpark_uz
+itparkuzbekistan
+mohirdev
+najottalim
+pdpuz
+uzbekdevs
+# Блоги и общество
+xushnudbek
+shermatov_sherzod
+mirkomil_kahhorov
+alisher_sadullaev
+uzbek_blogger
+# Спорт
+championat_asia
+uffuz
+pfl_uz
+sportuz
+stadionuz
+# Образование и языки
+ielts_uz
+english_uz
+uzbek_tilida
+talim_uz
+edu_uz

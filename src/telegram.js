@@ -66,7 +66,24 @@ function tmeGet(path) {
 }
 
 async function fetchPage(username) {
-  const html = await tmeGet(username);
+  return parsePage(await tmeGet(username), username);
+}
+
+// Пригласительная ссылка частного канала: t.me/+HASH или t.me/joinchat/HASH
+function parseInvite(input) {
+  const m = String(input || '').trim().match(/^(?:https?:\/\/)?(?:www\.)?(?:t|telegram)\.(?:me|dog)\/(?:\+|joinchat\/)([\w-]{10,64})\/?$/i);
+  return m ? `https://t.me/+${m[1]}` : null;
+}
+
+async function fetchInviteInfo(inviteLink, username) {
+  const hash = parseInvite(inviteLink)?.split('+')[1];
+  if (!hash) return null;
+  const info = parsePage(await tmeGet(`+${hash}`), username);
+  if (info && info.type === 'user') info.type = 'channel';
+  return info;
+}
+
+function parsePage(html, username) {
   const pick = (re) => { const m = html.match(re); return m ? m[1] : ''; };
 
   const title = decodeEntities(pick(/<div class="tgme_page_title"[^>]*>([\s\S]*?)<\/div>/));
@@ -131,6 +148,7 @@ async function fetchPosts(username) {
   const subscribers = counter ? parseCount(counter[1]) : null;
 
   const posts = [];
+  const texts = [];
   const mentions = new Set();
   const own = username.toLowerCase();
   for (const chunk of html.split('data-post="').slice(1)) {
@@ -149,6 +167,8 @@ async function fetchPosts(username) {
     for (const m of body.matchAll(/href="https?:\/\/t\.me\/(?:s\/)?([a-zA-Z][\w]{3,31})(?=["/?])/g)) mentions.add(m[1]);
     for (const m of body.matchAll(/(?:^|[\s>(])@([a-zA-Z][\w]{3,31})\b/g)) mentions.add(m[1]);
 
+    const text = body.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
+    if (text) texts.push(decodeEntities(text[1]));
     posts.push({
       id: Number(id[1]),
       date: new Date(date[1]).toISOString(),
@@ -161,7 +181,7 @@ async function fetchPosts(username) {
   }
   const reserved = new Set(['joinchat', 'addstickers', 'share', 'proxy', 'socks', 'iv', 'addtheme', 'setlanguage', 'contact', 'login', 'addemoji', 'boost', 'giftcode', 'invoice']);
   const found = [...mentions].filter((u) => u.toLowerCase() !== own && !reserved.has(u.toLowerCase()));
-  return { subscribers, posts, mentions: found };
+  return { subscribers, posts, mentions: found, text: texts.join('\n').slice(0, 20000) };
 }
 
-module.exports = { parseUsername, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };
+module.exports = { parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };

@@ -126,6 +126,10 @@ addColumn('channels', 'engagement', 'REAL');
 addColumn('channels', 'fraud_score', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('channels', 'fraud_reasons', "TEXT NOT NULL DEFAULT '[]'");
 addColumn('channels', 'analyzed_at', 'TEXT');
+addColumn('channels', 'is_uz', 'INTEGER');
+addColumn('channels', 'is_private', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('channels', 'invite_link', 'TEXT');
+addColumn('import_queue', 'region_check', 'INTEGER NOT NULL DEFAULT 1');
 addColumn('stats', 'avg_reach', 'INTEGER');
 addColumn('stats', 'err', 'REAL');
 

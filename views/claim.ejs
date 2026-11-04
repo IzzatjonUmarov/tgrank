@@ -1,9 +1,10 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
   <h1>Подтверждение владения</h1>
-  <p>Канал: <a href="/c/<%= channel.username %>"><b><%= channel.title %></b> (@<%= channel.username %>)</a></p>
+  <p>Канал: <a href="/c/<%= channel.username %>"><b><%= channel.title %></b> (<%= h.handle(channel) %>)</a></p>
+  <% if (channel.is_private) { %><p class="small muted">Частный канал появится в каталоге только после подтверждения: так мы убеждаемся, что его добавил владелец. Проверка идёт по странице вашей ссылки-приглашения.</p><% } %>
   <ol class="steps">
-    <li>Откройте настройки <%= channel.type === 'bot' ? 'бота в @BotFather (/setdescription или /setabouttext)' : 'канала/группы в Telegram' %>.</li>
+    <li>Откройте настройки <%= channel.type === 'bot' ? 'бота в @BotFather (/setdescription или /setabouttext)' : (channel.is_private ? 'частного канала' : 'канала/группы') + ' в Telegram → «Описание»' %>.</li>
     <li>Добавьте в описание этот код:<code class="big copy" data-copy="<%= code %>"><%= code %></code></li>
     <li>Сохраните и нажмите «Проверить». После подтверждения код можно удалить.</li>
   </ol>

@@ -36,3 +36,8 @@ Object.assign(module.exports, {
   keepAlive: process.env.KEEP_ALIVE !== 'false' && module.exports.baseUrl.startsWith('https://'),
   keepAliveMinutes: Number(process.env.KEEP_ALIVE_MINUTES || 10),
 });
+
+Object.assign(module.exports, {
+  // Регион каталога: uz — только каналы для узбекского рынка; all — без ограничений
+  region: process.env.REGION || 'uz',
+});

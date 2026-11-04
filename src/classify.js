@@ -56,4 +56,33 @@ function guessLanguage(info) {
   return 'other';
 }
 
-module.exports = { guessCategoryId, guessLanguage };
+// Канал для узбекского рынка: узбекский язык или явная привязка к Узбекистану
+// (страна, города, домены .uz, телефоны +998, сум, «uz» в username).
+// Русскоязычные узбекские каналы (Kun.uz, Gazeta.uz и т. п.) тоже проходят.
+const UZ_WORDS = [
+  'узбекистан', 'ўзбекистон', 'узбекистон', "o'zbekiston", 'oʻzbekiston', 'ozbekiston', 'uzbekistan', 'uzbek', 'узбек', "o'zbek", 'oʻzbek',
+  'ташкент', 'тошкент', 'toshkent', 'tashkent', 'самарканд', 'самарқанд', 'samarqand', 'samarkand', 'бухар', 'buxoro', 'bukhara',
+  'андижан', 'андижон', 'andijon', 'andijan', 'фергана', 'фарғона', "farg'ona", 'fargʻona', 'fergana', 'наманган', 'namangan',
+  'нукус', 'nukus', 'каракалпак', 'қорақалпоқ', "qoraqalpog'", 'qoraqalpogʻ', 'карши', 'қарши', 'qarshi', 'хорезм', 'хоразм', 'xorazm',
+  'ургенч', 'urganch', 'джизак', 'жиззах', 'jizzax', 'навои', 'навоий', 'navoiy', 'термез', 'термиз', 'termiz', 'гулистан', 'guliston',
+  'кашкадар', 'қашқадарё', 'qashqadaryo', 'сурхандар', 'сурхондарё', 'surxondaryo', 'сырдар', 'sirdaryo', 'ферган', 'коканд', "qo'qon",
+  'mirziyoyev', 'мирзиёев', 'uzcard', 'humo', 'payme', 'click.uz', 'uzum', '+998', ' uzs', "so'm", 'soʻm', ' сум ', ' сўм',
+];
+
+function isUzbekMarket(info, postsText = '') {
+  if (guessLanguage(info) === 'uz') return { ok: true, reason: 'узбекский язык' };
+  const profile = ` ${info.title} ${info.description} `.toLowerCase();
+  if (/\.uz\b/.test(profile)) return { ok: true, reason: 'домен .uz' };
+  if (/(^uz|uz$|_uz|uz_|uzb)/i.test(info.username)) return { ok: true, reason: 'uz в username' };
+  const word = UZ_WORDS.find((w) => profile.includes(w));
+  if (word) return { ok: true, reason: `«${word.trim()}» в описании` };
+  if (postsText) {
+    const text = ` ${postsText} `.toLowerCase();
+    if (guessLanguage({ title: '', description: postsText }) === 'uz') return { ok: true, reason: 'посты на узбекском' };
+    const hits = UZ_WORDS.filter((w) => text.includes(w)).length + (text.match(/\.uz\b/g) || []).length;
+    if (hits >= 3) return { ok: true, reason: 'посты про Узбекистан' };
+  }
+  return { ok: false, reason: 'нет признаков узбекского рынка' };
+}
+
+module.exports = { guessCategoryId, guessLanguage, isUzbekMarket };

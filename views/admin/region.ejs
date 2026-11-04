@@ -1,0 +1,27 @@
+<%- include('../partials/header') %>
+<h1>🇺🇿 Только узбекский рынок</h1>
+<%- include('_nav') %>
+<p class="muted">Каналы, у которых не нашлось признаков узбекского рынка: узбекского языка, городов Узбекистана, доменов .uz, +998, «uz» в username или постов про Узбекистан. Отметьте, что удалить. Если канал на самом деле узбекский, нажмите «Это UZ» — он останется и больше не попадёт в этот список.</p>
+<% if (!items.length) { %>
+  <div class="panel empty"><p>Все каналы в каталоге — для узбекского рынка. 🎉</p></div>
+<% } else { %>
+<form method="post" action="/admin/region" id="region-form" onsubmit="return confirm('Удалить отмеченные каналы вместе со статистикой?')"><input type="hidden" name="_csrf" value="<%= csrf %>"></form>
+<div class="section-head">
+  <label class="check-inline"><input type="checkbox" checked onchange="document.querySelectorAll('.pick').forEach((c) => c.checked = this.checked)"> Выбрать все (<%= items.length %>)</label>
+  <button class="btn btn-danger btn-sm" form="region-form">Удалить отмеченные</button>
+</div>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th></th><th>Канал</th><th>Категория</th><th class="r">Подписчики</th><th></th></tr></thead>
+  <tbody><% items.forEach((c) => { %>
+    <tr>
+      <td><input type="checkbox" class="pick" name="ids" value="<%= c.id %>" form="region-form" checked></td>
+      <td><a class="tcell" href="/c/<%= c.username %>" target="_blank"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted"><%= h.handle(c) %> · <%= c.language %></small></span></a>
+        <div class="small muted clamp"><%= c.description %></div></td>
+      <td><%= c.category_name || '—' %></td>
+      <td class="r"><%= h.num(c.subscribers) %></td>
+      <td><form method="post" action="/admin/channels/<%= c.id %>/mark-uz"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-xs">Это UZ</button></form></td>
+    </tr>
+  <% }) %></tbody>
+</table></div>
+<% } %>
+<%- include('../partials/footer') %>

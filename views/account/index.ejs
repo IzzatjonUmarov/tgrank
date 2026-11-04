@@ -13,8 +13,8 @@
     <tbody>
     <% mine.forEach((c) => { %>
       <tr>
-        <td><a class="tcell" href="/c/<%= c.username %>"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted">@<%= c.username %></small></span></a></td>
-        <td><span class="badge st-<%= c.status %>"><%= { pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[c.status] %></span><% if (c.boosted) { %> <span class="badge boost">🚀</span><% } %></td>
+        <td><a class="tcell" href="/c/<%= c.username %>"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted"><%= h.handle(c) %></small></span></a></td>
+        <td><span class="badge st-<%= c.status %>"><%= { draft: 'черновик', pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[c.status] %></span><% if (c.boosted) { %> <span class="badge boost">🚀</span><% } %></td>
         <td class="r"><%= h.num(c.subscribers) %></td>
         <td><% if (c.owner_id === user.id) { %><span class="badge ok">✔ вы владелец</span><% } else if (!c.owner_id) { %><a href="/c/<%= c.username %>/claim">Подтвердить</a><% } else { %>—<% } %></td>
         <td class="r"><% if (c.owner_id === user.id) { %><a href="/account/channel/<%= c.id %>/edit">⚙️</a><% } %></td>

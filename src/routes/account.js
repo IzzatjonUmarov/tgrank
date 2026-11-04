@@ -3,6 +3,7 @@ const db = require('../db');
 const ch = require('../channels');
 const { requireUser } = require('./guards');
 const { LANGUAGES } = require('../helpers');
+const { parseInvite } = require('../telegram');
 
 const router = express.Router();
 router.use(requireUser);
@@ -39,6 +40,17 @@ router.post('/channel/:id/edit', (req, res) => {
   const tags = String(req.body.tags || '').slice(0, 200);
   db.run('UPDATE channels SET category_id = COALESCE(?, category_id), language = ?, tags = ? WHERE id = ?',
     db.get('SELECT id FROM categories WHERE id = ?', categoryId)?.id ?? null, language, tags, c.id);
+  if (c.is_private && req.body.invite_link) {
+    const invite = parseInvite(req.body.invite_link);
+    if (!invite) { req.flash('error', 'Ссылка-приглашение должна быть вида https://t.me/+…'); return res.redirect(`/account/channel/${c.id}/edit`); }
+    if (invite !== c.invite_link) {
+      if (db.get('SELECT 1 FROM channels WHERE invite_link = ? AND id != ?', invite, c.id)) { req.flash('error', 'Эта ссылка уже используется другим каналом.'); return res.redirect(`/account/channel/${c.id}/edit`); }
+      // Новая ссылка может вести на другой канал — владение нужно подтвердить заново
+      db.run(`UPDATE channels SET invite_link = ?, owner_id = NULL, status = 'draft' WHERE id = ?`, invite, c.id);
+      req.flash('info', 'Ссылка обновлена. Подтвердите владение заново — после этого канал вернётся в каталог.');
+      return res.redirect(`/c/${c.username}/claim`);
+    }
+  }
   req.flash('success', 'Изменения сохранены.');
   res.redirect(`/c/${c.username}`);
 });

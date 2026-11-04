@@ -5,6 +5,7 @@ const { requireAdmin } = require('./guards');
 const { updateAll, isRunning } = require('../stats');
 const importer = require('../importer');
 const { syncChannel } = require('../sync');
+const { nonUzbek, removeChannels } = require('../region');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -40,6 +41,8 @@ router.get('/channels', (req, res) => {
 const goBack = (req, res) => res.redirect(req.get('referer') || '/admin/channels');
 
 router.post('/channels/:id/approve', (req, res) => {
+  const c = db.get('SELECT is_private, owner_id FROM channels WHERE id = ?', Number(req.params.id));
+  if (c && c.is_private && !c.owner_id) { req.flash('error', 'Частный канал можно одобрить только после подтверждения владельца.'); return goBack(req, res); }
   db.run(`UPDATE channels SET status = 'approved', reject_reason = NULL, approved_at = COALESCE(approved_at, datetime('now')) WHERE id = ?`, Number(req.params.id));
   goBack(req, res);
 });
@@ -118,7 +121,7 @@ router.post('/categories/:id/delete', (req, res) => {
 });
 
 router.get('/reports', (req, res) => {
-  const reports = db.all(`SELECT r.*, c.username, c.title, u.username AS reporter FROM reports r
+  const reports = db.all(`SELECT r.*, c.username, c.title, c.is_private, c.invite_link, u.username AS reporter FROM reports r
     JOIN channels c ON c.id = r.channel_id LEFT JOIN users u ON u.id = r.user_id
     ORDER BY r.resolved, r.created_at DESC LIMIT 200`);
   res.render('admin/reports', { title: 'Жалобы', reports });
@@ -139,6 +142,20 @@ router.post('/reviews/:id/delete', (req, res) => {
   goBack(req, res);
 });
 
+router.get('/region', (req, res) => {
+  res.render('admin/region', { title: 'Только Узбекистан', items: nonUzbek() });
+});
+router.post('/region', (req, res) => {
+  const ids = new Set([].concat(req.body.ids || []).map(Number));
+  const n = removeChannels(nonUzbek().filter((c) => ids.has(c.id)));
+  req.flash('success', `Удалено каналов: ${n}.`);
+  res.redirect('/admin/region');
+});
+router.post('/channels/:id/mark-uz', (req, res) => {
+  db.run('UPDATE channels SET is_uz = 1 WHERE id = ?', Number(req.params.id));
+  goBack(req, res);
+});
+
 router.get('/import', (req, res) => {
   const status = ['queued', 'done', 'failed', 'skipped'].includes(req.query.status) ? req.query.status : 'queued';
   res.render('admin/import', {
@@ -154,6 +171,7 @@ router.post('/import', (req, res) => {
     source: 'admin',
     categoryId: parseInt(req.body.category_id, 10) || null,
     approve: req.body.approve === '1',
+    regionCheck: req.body.region_check === '1',
   });
   req.flash('success', `В очередь добавлено: ${r.added}. Пропущено (дубли, уже в каталоге, неверный формат): ${r.skipped}.`);
   res.redirect('/admin/import');
