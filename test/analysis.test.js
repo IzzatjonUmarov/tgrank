@@ -128,6 +128,15 @@ global.fetch = async (url, opts = {}) => {
   assert.equal(await tg.isChannelAdmin('goodchan', 777), true);
   assert.equal(await tg.isChannelAdmin('goodchan', 778), false);
 
+  // Безопасность: редиректы только на свои страницы, сравнение токенов
+  const sec = require(R + 'security');
+  for (const bad of ['//evil.com', '/\\evil.com', '/\\/evil.com', 'https://evil.com', '/\x00x', ' /x', 'javascript:alert(1)']) {
+    assert.equal(sec.safeNext(bad), '/', 'опасный next: ' + JSON.stringify(bad));
+  }
+  assert.equal(sec.safeNext('/c/kunuz?tab=1'), '/c/kunuz?tab=1');
+  assert.ok(sec.tokensEqual('abc', 'abc') && !sec.tokensEqual('abc', 'abd') && !sec.tokensEqual('', ''));
+  assert.equal(sec.sameOriginPath('https://evil.com/x', '/admin'), '/admin');
+
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);
   console.log('ALL OK');

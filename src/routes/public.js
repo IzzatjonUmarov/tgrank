@@ -6,6 +6,8 @@ const crypto = require('node:crypto');
 const { parseUsername, parseInvite, fetchChannelInfo, fetchInviteInfo, isChannelAdmin } = require('../telegram');
 const { isUzbekMarket } = require('../classify');
 const { requireUser } = require('./guards');
+const { rateLimit } = require('../security');
+const userLimit = (name, max, minutes) => rateLimit(name, { max, windowMs: minutes * 60_000, by: 'user' });
 const { TYPES, LANGUAGES } = require('../helpers');
 const { fraudLevel, dailyDeltas, analyze } = require('../analysis');
 const { syncChannel, syncPosts, fetchProfile } = require('../sync');
@@ -57,7 +59,7 @@ function renderCatalog(req, res, preset = {}) {
 }
 
 router.get('/catalog', (req, res) => renderCatalog(req, res));
-router.get('/search', (req, res) => renderCatalog(req, res));
+router.get('/search', rateLimit('search', { max: 120, windowMs: 60_000 }), (req, res) => renderCatalog(req, res));
 router.get('/channels', (req, res) => renderCatalog(req, res, { type: 'channel' }));
 router.get('/groups', (req, res) => renderCatalog(req, res, { type: 'group' }));
 router.get('/bots', (req, res) => renderCatalog(req, res, { type: 'bot' }));
@@ -135,7 +137,7 @@ function loadChannel(req, res) {
 }
 const back = (req, res, c) => res.redirect(`/c/${c.username}`);
 
-router.post('/c/:username/vote', requireUser, (req, res) => {
+router.post('/c/:username/vote', requireUser, userLimit('vote', 60, 60), (req, res) => {
   const c = loadChannel(req, res); if (!c) return;
   const r = db.run('INSERT OR IGNORE INTO votes (user_id, channel_id, date) VALUES (?, ?, ?)', req.user.id, c.id, ch.today());
   if (r.changes) { db.run('UPDATE channels SET votes = votes + 1 WHERE id = ?', c.id); req.flash('success', 'Спасибо, ваш голос учтён!'); }
@@ -150,7 +152,7 @@ router.post('/c/:username/favorite', requireUser, (req, res) => {
   back(req, res, c);
 });
 
-router.post('/c/:username/review', requireUser, (req, res) => {
+router.post('/c/:username/review', requireUser, userLimit('review', 20, 60), (req, res) => {
   const c = loadChannel(req, res); if (!c) return;
   const rating = parseInt(req.body.rating, 10);
   const text = String(req.body.text || '').trim().slice(0, 2000);
@@ -164,7 +166,7 @@ router.post('/c/:username/review', requireUser, (req, res) => {
   back(req, res, c);
 });
 
-router.post('/c/:username/report', requireUser, (req, res) => {
+router.post('/c/:username/report', requireUser, userLimit('report', 10, 60), (req, res) => {
   const c = loadChannel(req, res); if (!c) return;
   const reason = String(req.body.reason || '').trim().slice(0, 1000);
   if (reason.length < 5) { req.flash('error', 'Опишите причину жалобы.'); return back(req, res, c); }
@@ -174,7 +176,7 @@ router.post('/c/:username/report', requireUser, (req, res) => {
 });
 
 // Обновить данные и анализ вручную (не чаще раза в 30 минут на канал)
-router.post('/c/:username/refresh', requireUser, async (req, res, next) => {
+router.post('/c/:username/refresh', requireUser, userLimit('refresh', 30, 60), async (req, res, next) => {
   try {
     const c = loadChannel(req, res); if (!c) return;
     if (!canRefresh(c) && req.user.role !== 'admin') {
@@ -212,7 +214,7 @@ function confirmOwnership(req, c) {
 }
 
 // Подтверждение через бота: пользователь вошёл через Telegram, бот добавлен админом канала
-router.post('/c/:username/verify-bot', requireUser, async (req, res, next) => {
+router.post('/c/:username/verify-bot', requireUser, userLimit('verify', 20, 15), async (req, res, next) => {
   try {
     const c = ch.byUsername(req.params.username);
     if (!c || c.owner_id) return res.redirect(c ? `/c/${c.username}` : '/');
@@ -237,7 +239,7 @@ router.get('/c/:username/claim', requireUser, (req, res) => {
   res.render('claim', { title: 'Подтверждение владения', channel: c, code: ch.verifyCode(c.id, req.user.id), botMethod: !!config.botToken && !c.is_private && c.type !== 'bot' });
 });
 
-router.post('/c/:username/verify', requireUser, async (req, res, next) => {
+router.post('/c/:username/verify', requireUser, userLimit('verify', 20, 15), async (req, res, next) => {
   try {
     const c = ch.byUsername(req.params.username);
     if (!c || c.owner_id) return res.redirect(c ? `/c/${c.username}` : '/');
@@ -254,7 +256,7 @@ router.post('/c/:username/verify', requireUser, async (req, res, next) => {
 
 router.get('/add', requireUser, (req, res) => res.render('add', { title: 'Добавить канал', error: null, form: {} }));
 
-router.post('/add', requireUser, async (req, res, next) => {
+router.post('/add', requireUser, userLimit('add', 15, 60), async (req, res, next) => {
   try {
     const form = {
       link: String(req.body.link || ''),

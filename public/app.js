@@ -1,3 +1,23 @@
+// Поведение страниц без инлайн-скриптов (их запрещает Content-Security-Policy)
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-toggle-nav]')) document.body.classList.toggle('nav-open');
+  const row = e.target.closest('[data-href]');
+  if (row && !e.target.closest('a, button, input, select, textarea, form')) location.href = row.dataset.href;
+});
+document.addEventListener('submit', (e) => {
+  const msg = e.target.dataset?.confirm;
+  if (msg && !confirm(msg)) e.preventDefault();
+}, true);
+document.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.matches('[data-autosubmit]')) el.form?.submit();
+  if (el.matches('[data-check-all]')) document.querySelectorAll(el.dataset.checkAll).forEach((c) => { c.checked = el.checked; });
+});
+// Битый аватар — показываем букву под ним
+document.addEventListener('error', (e) => {
+  if (e.target.matches?.('.ava img')) e.target.remove();
+}, true);
+
 // Копирование в буфер
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-copy]');

@@ -4,6 +4,7 @@ const db = require('../db');
 const social = require('../social');
 const ads = require('../ads');
 const { requireUser } = require('./guards');
+const { rateLimit } = require('../security');
 
 const router = express.Router();
 router.use(requireUser);
@@ -30,7 +31,7 @@ router.get('/new', (req, res) => {
   res.render('orders/new', { title: 'Заказать рекламу', channel, prices: JSON.parse(channel.ad_prices || '[]'), error: null, form: { format: req.query.format || '' } });
 });
 
-router.post('/new', (req, res) => {
+router.post('/new', rateLimit('order', { max: 20, windowMs: 60 * 60_000, by: 'user' }), (req, res) => {
   const channel = adChannel(Number(req.body.channel_id));
   if (!channel) return res.status(404).render('error', { title: 'Не найдено', message: 'Канал не принимает заказы на рекламу.' });
   const prices = JSON.parse(channel.ad_prices || '[]');

@@ -35,7 +35,7 @@
     </ul>
     <div class="actions">
       <form method="post" action="/admin/import/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Повторить ошибки</button></form>
-      <form method="post" action="/admin/import/clear" onsubmit="return confirm('Очистить очередь автопоиска?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Очистить очередь автопоиска</button></form>
+      <form method="post" action="/admin/import/clear" data-confirm="Очистить очередь автопоиска?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Очистить очередь автопоиска</button></form>
     </div>
   </section>
 </div>

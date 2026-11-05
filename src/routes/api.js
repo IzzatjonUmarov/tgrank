@@ -2,10 +2,12 @@
 const express = require('express');
 const db = require('../db');
 const ch = require('../channels');
+const { rateLimit } = require('../security');
 const { tgLink } = require('../helpers');
 const { cpm } = require('../ads');
 
 const router = express.Router();
+router.use(rateLimit('api', { max: 120, windowMs: 60_000 }));
 router.use((req, res, next) => { res.set('Access-Control-Allow-Origin', '*'); next(); });
 
 const pub = (c) => ({

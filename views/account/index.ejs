@@ -7,6 +7,7 @@
 <section class="panel tg-link">
   <% if (user.telegram_id) { %>
     <p>✅ Telegram привязан<% if (user.tg_username) { %>: <b>@<%= user.tg_username %></b><% } %>. Можно подтверждать владение каналами через бота.</p>
+    <p class="small muted">Ваш Telegram ID: <code class="copy" data-copy="<%= user.telegram_id %>"><%= user.telegram_id %></code><% if (user.role === 'admin') { %> — укажите его в ADMIN_TELEGRAM_IDS на сервере, чтобы роль админа надёжно закреплялась за вами<% } %>.</p>
   <% } else { %>
     <p><b>Привяжите Telegram</b> — чтобы входить в один клик и подтверждать владение каналами через бота.</p>
     <%- include('../partials/tg-login', { next: '/account' }) %>

@@ -35,7 +35,7 @@ router.get('/:id', (req, res) => {
     title: `Переписка с ${other.username}`,
     conv, other,
     messages: social.messagesOf(conv.id),
-    channel: channelId ? db.get('SELECT id, username, title, is_private FROM channels WHERE id = ?', channelId) : null,
+    channel: channelId ? db.get(`SELECT id, username, title, is_private FROM channels WHERE id = ? AND status = 'approved'`, channelId) : null,
     orders: db.all(`SELECT * FROM orders WHERE (customer_id = ? AND executor_id = ?) OR (customer_id = ? AND executor_id = ?) ORDER BY id DESC LIMIT 10`,
       req.user.id, other.id, other.id, req.user.id),
     ORDER_STATUS: social.ORDER_STATUS,

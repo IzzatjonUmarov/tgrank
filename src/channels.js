@@ -37,6 +37,7 @@ const SORTS = {
 function list({ q, type, category, language, minSubs, maxSubs, verified, clean, suspicious, ads, maxPrice, sort = 'popular', page = 1, perPage = config.perPage, status = 'approved' } = {}) {
   const where = ['c.status = ?'];
   const params = [status];
+  q = String(q || '').trim().slice(0, 100);
   if (q) {
     where.push('(c.title LIKE ? OR c.username LIKE ? OR c.description LIKE ? OR c.tags LIKE ?)');
     const like = `%${q}%`;

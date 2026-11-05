@@ -34,6 +34,6 @@
     </fieldset>
     <button class="btn btn-primary">Сохранить</button>
   </form>
-  <form method="post" action="/account/channel/<%= channel.id %>/delete" onsubmit="return confirm('Удалить канал из каталога вместе со статистикой?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Удалить из каталога</button></form>
+  <form method="post" action="/account/channel/<%= channel.id %>/delete" data-confirm="Удалить канал из каталога вместе со статистикой?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Удалить из каталога</button></form>
 </div>
 <%- include('../partials/footer') %>

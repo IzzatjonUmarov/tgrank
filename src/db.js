@@ -135,6 +135,14 @@ CREATE TABLE IF NOT EXISTS user_ratings (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (order_id, from_user)
 );
+CREATE TABLE IF NOT EXISTS admin_log (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,
+  details TEXT NOT NULL DEFAULT '{}',
+  ip TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS posts (
   channel_id INTEGER NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
   post_id INTEGER NOT NULL,

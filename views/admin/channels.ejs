@@ -15,7 +15,7 @@
     <td><a class="tcell" href="/c/<%= c.username %>" target="_blank"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted"><%= h.handle(c) %> · <%= h.TYPES[c.type] %> · <%= c.language %></small></span></a>
       <div class="small muted clamp"><%= c.description %></div></td>
     <td><form method="post" action="/admin/channels/<%= c.id %>/category"><input type="hidden" name="_csrf" value="<%= csrf %>">
-      <select name="category_id" onchange="this.form.submit()"><option value="">—</option><% categories.forEach((cat) => { %><option value="<%= cat.id %>" <%= c.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option><% }) %></select></form></td>
+      <select name="category_id" data-autosubmit><option value="">—</option><% categories.forEach((cat) => { %><option value="<%= cat.id %>" <%= c.category_id === cat.id ? 'selected' : '' %>><%= cat.name %></option><% }) %></select></form></td>
     <td class="r"><%= h.num(c.subscribers) %></td>
     <td class="r"><%= c.err != null ? c.err + '%' : '—' %></td>
     <td class="r"><span class="risk-<%= c.fraud_score >= 50 ? 'high' : c.fraud_score >= 25 ? 'medium' : 'ok' %>" title="<%= JSON.parse(c.fraud_reasons || '[]').map((r) => r.text).join('\n') %>"><%= c.fraud_score %></span></td>
@@ -27,7 +27,7 @@
       <% if (c.boosted) { %><%- F(c.id + '/unboost', 'Снять буст') %><% } %>
       <% if (c.owner_id) { %><%- F(c.id + '/reset-owner', 'Сбросить владельца') %><% } %>
       <%- F(c.id + '/refresh', '↻ Обновить') %>
-      <form method="post" action="/admin/channels/<%= c.id %>/delete" onsubmit="return confirm('Удалить?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs">🗑</button></form>
+      <form method="post" action="/admin/channels/<%= c.id %>/delete" data-confirm="Удалить?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-xs">🗑</button></form>
     </td>
   </tr>
   <% }) %>

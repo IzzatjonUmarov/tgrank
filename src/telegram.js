@@ -198,7 +198,9 @@ function checkTelegramAuth(data) {
   const checkString = Object.keys(rest).sort().map((k) => `${k}=${rest[k]}`).join('\n');
   const secret = crypto.createHash('sha256').update(config.botToken).digest();
   const hmac = crypto.createHmac('sha256', secret).update(checkString).digest('hex');
-  const fresh = Date.now() / 1000 - Number(rest.auth_date) < 86400;
+  // Подпись живёт час: перехваченную ссылку входа нельзя использовать долго
+  const age = Date.now() / 1000 - Number(rest.auth_date);
+  const fresh = age >= -300 && age < 3600;
   return fresh && hmac.length === hash.length && crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(hash));
 }
 

@@ -5,7 +5,7 @@
   <div class="table-wrap"><table class="table">
     <thead><tr><th>#</th><th>Канал</th><th><%= mine ? 'Заказчик' : 'Исполнитель' %></th><th>Формат</th><th class="r">Цена</th><th>Статус</th><th>Обновлён</th></tr></thead>
     <tbody><% rows.forEach((o) => { %>
-      <tr onclick="location.href='/orders/<%= o.id %>'"><td><a href="/orders/<%= o.id %>">#<%= o.id %></a></td><td><%= o.channel_title %></td>
+      <tr data-href="/orders/<%= o.id %>"><td><a href="/orders/<%= o.id %>">#<%= o.id %></a></td><td><%= o.channel_title %></td>
         <td><%= mine ? o.customer_name : o.executor_name %></td><td><%= o.format %></td>
         <td class="r"><%= o.price ? h.ads.fmtPrice(o.price, o.currency) : 'договорная' %></td>
         <td><span class="order-status os-<%= o.status %>"><%= ORDER_STATUS[o.status] %></span></td><td class="small"><%= h.date(o.updated_at) %></td></tr>

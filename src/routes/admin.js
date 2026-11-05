@@ -6,9 +6,26 @@ const { updateAll, isRunning } = require('../stats');
 const importer = require('../importer');
 const { syncChannel } = require('../sync');
 const { nonUzbek, removeChannels } = require('../region');
+const { sameOriginPath } = require('../security');
 
 const router = express.Router();
 router.use(requireAdmin);
+
+// Журнал действий админов: кто, что и откуда изменил
+router.use((req, res, next) => {
+  if (req.method === 'POST') {
+    const details = Object.fromEntries(Object.entries(req.body || {}).filter(([k]) => k !== '_csrf').map(([k, v]) => [k, String(v).slice(0, 200)]));
+    db.run('INSERT INTO admin_log (user_id, action, details, ip) VALUES (?, ?, ?, ?)', req.user.id, req.path.slice(0, 200), JSON.stringify(details).slice(0, 2000), req.ip);
+  }
+  next();
+});
+
+router.get('/audit', (req, res) => {
+  res.render('admin/audit', {
+    title: 'Журнал действий',
+    rows: db.all(`SELECT l.*, u.username FROM admin_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT 300`),
+  });
+});
 
 router.get('/', (req, res) => {
   res.render('admin/index', {
@@ -38,7 +55,7 @@ router.get('/channels', (req, res) => {
   res.render('admin/channels', { title: 'Каналы', status, result, suspicious, q: req.query.q || '' });
 });
 
-const goBack = (req, res) => res.redirect(req.get('referer') || '/admin/channels');
+const goBack = (req, res) => res.redirect(sameOriginPath(req.get('referer'), '/admin/channels'));
 
 router.post('/channels/:id/approve', (req, res) => {
   const c = db.get('SELECT is_private, owner_id, status FROM channels WHERE id = ?', Number(req.params.id));

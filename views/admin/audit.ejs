@@ -1,0 +1,10 @@
+<%- include('../partials/header') %>
+<h1>Журнал действий админов</h1>
+<%- include('_nav') %>
+<div class="panel table-wrap"><table class="table">
+  <thead><tr><th>Когда (UTC)</th><th>Кто</th><th>Действие</th><th>Данные</th><th>IP</th></tr></thead>
+  <tbody><% rows.forEach((r) => { %>
+    <tr><td class="small"><%= r.created_at %></td><td><%= r.username || '—' %></td><td><code><%= r.action %></code></td><td class="small muted clamp"><%= r.details %></td><td class="small"><%= r.ip %></td></tr>
+  <% }) %><% if (!rows.length) { %><tr><td colspan="5" class="muted">Пусто.</td></tr><% } %></tbody>
+</table></div>
+<%- include('../partials/footer') %>

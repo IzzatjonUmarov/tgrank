@@ -5,9 +5,9 @@
 <% if (!items.length) { %>
   <div class="panel empty"><p>Все каналы в каталоге — для узбекского рынка. 🎉</p></div>
 <% } else { %>
-<form method="post" action="/admin/region" id="region-form" onsubmit="return confirm('Удалить отмеченные каналы вместе со статистикой?')"><input type="hidden" name="_csrf" value="<%= csrf %>"></form>
+<form method="post" action="/admin/region" id="region-form" data-confirm="Удалить отмеченные каналы вместе со статистикой?"><input type="hidden" name="_csrf" value="<%= csrf %>"></form>
 <div class="section-head">
-  <label class="check-inline"><input type="checkbox" checked onchange="document.querySelectorAll('.pick').forEach((c) => c.checked = this.checked)"> Выбрать все (<%= items.length %>)</label>
+  <label class="check-inline"><input type="checkbox" checked data-check-all=".pick"> Выбрать все (<%= items.length %>)</label>
   <button class="btn btn-danger btn-sm" form="region-form">Удалить отмеченные</button>
 </div>
 <div class="panel table-wrap"><table class="table">

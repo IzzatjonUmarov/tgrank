@@ -12,7 +12,7 @@
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="logo" href="/">📊 <%= config.siteName %></a>
-    <button class="burger" aria-label="Меню" onclick="document.body.classList.toggle('nav-open')">☰</button>
+    <button class="burger" aria-label="Меню" data-toggle-nav>☰</button>
     <nav class="nav">
       <a href="/channels" class="<%= path === '/channels' ? 'active' : '' %>">Каналы</a>
       <a href="/groups" class="<%= path === '/groups' ? 'active' : '' %>">Группы</a>

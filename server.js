@@ -6,11 +6,21 @@ const config = require('./src/config');
 const db = require('./src/db');
 const { updateAll } = require('./src/stats');
 const social = require('./src/social');
+const security = require('./src/security');
 
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// Без надёжного секрета подпись cookie сессии можно подделать
+if (config.baseUrl.startsWith('https://') && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)) {
+  console.error('SESSION_SECRET не задан или короче 32 символов — запуск остановлен.');
+  process.exit(1);
+}
+
+app.use(security.headers);
 
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 
@@ -18,8 +28,8 @@ app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 app.get('/healthz', (req, res) => {
   res.set('Cache-Control', 'no-store').json({ ok: true, uptime: Math.round(process.uptime()) });
 });
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.urlencoded({ extended: false, limit: '200kb', parameterLimit: 2000 }));
+app.use(express.json({ limit: '50kb' }));
 app.use(cookieSession({
   name: 'tgr',
   secret: config.sessionSecret,
@@ -46,13 +56,15 @@ app.use((req, res, next) => {
   res.locals.categories = db.all('SELECT * FROM categories ORDER BY sort, name');
   res.locals.h = require('./src/helpers');
   req.flash = (type, text) => { req.session.flash = { type, text }; };
+  // Метка state для виджета входа Telegram (создаётся, только если кнопка показана)
+  res.locals.tgState = () => (req.session.tgState ||= crypto.randomBytes(16).toString('hex'));
   next();
 });
 
 app.use((req, res, next) => {
   if (req.method !== 'POST' || req.path.startsWith('/api/')) return next();
   const token = req.body?._csrf || req.get('x-csrf-token');
-  if (token !== req.session.csrf) return res.status(403).render('error', { title: 'Ошибка', message: 'Сессия устарела, обновите страницу и попробуйте снова.' });
+  if (!security.tokensEqual(token, req.session.csrf)) return res.status(403).render('error', { title: 'Ошибка', message: 'Сессия устарела, обновите страницу и попробуйте снова.' });
   next();
 });
 

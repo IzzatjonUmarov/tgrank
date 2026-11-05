@@ -14,6 +14,9 @@ module.exports = {
   botUsername: process.env.TELEGRAM_BOT_USERNAME || '',
   // Первый зарегистрированный с этим email получает роль admin
   adminEmail: (process.env.ADMIN_EMAIL || '').toLowerCase(),
+  // Надёжный способ назначить админов: числовые Telegram ID через запятую (личность подтверждает Telegram).
+  // Если задан, ADMIN_EMAIL игнорируется: email на сайте не подтверждается.
+  adminTelegramIds: (process.env.ADMIN_TELEGRAM_IDS || '').split(/[\s,]+/).filter(Boolean).map(Number),
   statsIntervalHours: Number(process.env.STATS_INTERVAL_HOURS || 6),
   boostHours: 24,
   boostCooldownHours: 24,

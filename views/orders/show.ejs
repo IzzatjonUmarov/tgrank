@@ -1,6 +1,6 @@
 <%- include('../partials/header') %>
 <div class="crumbs"><a href="/orders">Заказы</a> / #<%= order.id %></div>
-<% const act = (action, label, cls = 'btn-ghost', confirm = '') => `<form method="post" action="/orders/${order.id}/${action}"${confirm ? ` onsubmit="return confirm('${confirm}')"` : ''}><input type="hidden" name="_csrf" value="${csrf}"><button class="btn ${cls} btn-sm">${label}</button></form>`; %>
+<% const act = (action, label, cls = 'btn-ghost', confirm = '') => `<form method="post" action="/orders/${order.id}/${action}"${confirm ? ` data-confirm="${confirm}"` : ''}><input type="hidden" name="_csrf" value="${csrf}"><button class="btn ${cls} btn-sm">${label}</button></form>`; %>
 <div class="cols-main">
   <section class="panel">
     <h1>Заказ #<%= order.id %> <span class="order-status os-<%= order.status %>"><%= ORDER_STATUS[order.status] %></span></h1>
