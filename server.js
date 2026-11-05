@@ -24,6 +24,11 @@ if (config.baseUrl.startsWith('https://') && (!process.env.SESSION_SECRET || pro
 
 app.use(security.headers);
 
+// Версия статики меняется при каждом изменении файлов: браузер сразу получает свежие стили и скрипты
+const assetVersion = crypto.createHash('md5')
+  .update(['style.css', 'app.js'].map((f) => require('node:fs').readFileSync(path.join(__dirname, 'public', f))).join(''))
+  .digest('hex').slice(0, 10);
+app.locals.assetVersion = assetVersion;
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
 
 // Служебная проверка для пинга и мониторинга: без сессии, не считается просмотром

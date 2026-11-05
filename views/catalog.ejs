@@ -3,7 +3,7 @@
 <h1><% if (category) { %><%= category.icon %> <% } %><%= t(title) %> <small class="muted"><%= h.num(result.total) %></small></h1>
 
 <div class="catalog">
-  <aside class="filters panel">
+  <aside class="filters panel"><details class="filters-box" open data-mobile-collapse><summary class="filters-toggle">⚙️ <%= t('Фильтры') %></summary>
     <form method="get" action="<%= baseUrl %>">
       <label><%= t('Поиск') %><input name="q" value="<%= f.q %>" placeholder="<%= t('Название, @username, описание') %>"></label>
       <% if (!['/channels','/groups','/bots'].includes(baseUrl)) { %>
@@ -25,7 +25,7 @@
       <button class="btn btn-primary btn-block"><%= t('Применить') %></button>
       <a class="btn btn-ghost btn-block" href="<%= baseUrl %>"><%= t('Сбросить') %></a>
     </form>
-  </aside>
+  </details></aside>
   <div>
     <% if (!result.items.length) { %>
       <div class="empty panel"><p><%= t('Ничего не найдено.') %></p><a class="btn btn-primary" href="/add"><%= t('Добавить канал') %></a></div>

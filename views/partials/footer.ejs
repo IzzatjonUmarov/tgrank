@@ -9,6 +9,6 @@
     <div><b><%= t('Владельцам') %></b><a href="/add"><%= t('Добавить канал') %></a><a href="/pricing"><%= t('Тарифы') %></a><a href="/api-docs">API</a><a href="/faq">FAQ</a><% if (config.botUsername) { %><a href="https://t.me/<%= config.botUsername %>" target="_blank" rel="noopener">🤖 Telegram bot</a><% } %></div>
   </div>
 </footer>
-<script src="/app.js" defer></script>
+<script src="/app.js?v=<%= assetVersion %>" defer></script>
 </body>
 </html>

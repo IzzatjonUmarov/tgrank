@@ -29,6 +29,9 @@ document.addEventListener('change', (e) => {
   if (el.matches('[data-autosubmit]')) el.form?.submit();
   if (el.matches('[data-check-all]')) document.querySelectorAll(el.dataset.checkAll).forEach((c) => { c.checked = el.checked; });
 });
+// На телефоне фильтры каталога свёрнуты, чтобы результаты были видны сразу
+if (matchMedia('(max-width: 980px)').matches) document.querySelectorAll('[data-mobile-collapse]').forEach((d) => d.removeAttribute('open'));
+
 // Битый аватар — показываем букву под ним
 document.addEventListener('error', (e) => {
   if (e.target.matches?.('.ava img')) e.target.remove();
@@ -163,7 +166,8 @@ document.querySelectorAll('.chart-bars').forEach(barChart);
 
   const textarea = form.querySelector('textarea');
   textarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+    // На телефонах Enter переносит строку, отправка — кнопкой
+    if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); form.requestSubmit(); }
   });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

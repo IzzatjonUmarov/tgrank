@@ -5,36 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><%= t(title) %> — <%= config.siteName %></title>
 <meta name="description" content="<%= typeof description !== 'undefined' ? description : t('Каталог и рейтинг Telegram-каналов, групп и ботов: статистика подписчиков, рост, отзывы и бесплатное продвижение.') %>">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v=<%= assetVersion %>">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="logo" href="/">📊 <%= config.siteName %></a>
-    <button class="burger" aria-label="<%= t('Меню') %>" data-toggle-nav>☰</button>
-    <nav class="nav">
+    <a class="logo" href="/">📊 <span><%= config.siteName %></span></a>
+    <nav class="nav" id="site-nav">
       <a href="/channels" class="<%= path === '/channels' ? 'active' : '' %>"><%= t('Каналы') %></a>
       <a href="/groups" class="<%= path === '/groups' ? 'active' : '' %>"><%= t('Группы') %></a>
       <a href="/bots" class="<%= path === '/bots' ? 'active' : '' %>"><%= t('Боты') %></a>
       <a href="/top" class="<%= path === '/top' ? 'active' : '' %>"><%= t('Рейтинг') %></a>
       <a href="/ads" class="<%= path === '/ads' ? 'active' : '' %>"><%= t('💰 Реклама') %></a>
       <a href="/pricing" class="<%= path === '/pricing' ? 'active' : '' %>"><%= t('Тарифы') %><% if (config.freeMode) { %> <span class="badge free">free</span><% } %></a>
+      <a href="/add" class="nav-only-mobile"><%= t('+ Добавить') %></a>
+      <% if (user && user.role === 'admin') { %><a href="/admin" class="nav-only-mobile">🛠 <%= t('Админка') %></a><% } %>
     </nav>
-    <form class="search" action="/search" method="get">
-      <input name="q" placeholder="<%= t('Поиск каналов, групп, ботов…') %>" value="<%= query.q || '' %>">
+    <form class="search" action="/search" method="get" role="search">
+      <input name="q" type="search" placeholder="<%= t('Поиск каналов, групп, ботов…') %>" value="<%= query.q || '' %>" aria-label="<%= t('Поиск') %>">
     </form>
-    <div class="lang-switch"><% for (const code of Object.keys(LANGS)) { %><a href="<%= h.qs(query, { lang: code }) %>" class="<%= lang === code ? 'active' : '' %>" hreflang="<%= code %>"><%= code.toUpperCase() %></a><% } %></div>
-    <div class="userbox">
-      <a class="btn btn-primary btn-sm" href="/add"><%= t('+ Добавить') %></a>
+    <div class="tools">
+      <div class="lang-switch" role="group" aria-label="Til / Язык"><% for (const code of Object.keys(LANGS)) { %><a href="<%= h.qs(query, { lang: code }) %>" class="<%= lang === code ? 'active' : '' %>" hreflang="<%= code %>" lang="<%= code %>" title="<%= LANGS[code] %>"><%= code.toUpperCase() %></a><% } %></div>
+      <a class="btn btn-primary btn-sm add-btn" href="/add" title="<%= t('Добавить канал') %>">+<span class="lbl"> <%= t('+ Добавить').replace(/^\+\s*/, '') %></span></a>
       <% if (user) { %>
-        <% if (user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin"><%= t('Админка') %></a><% } %>
-        <a class="btn btn-ghost btn-sm icon-btn" href="/messages" title="<%= t('Сообщения') %>">✉️<span class="count" id="unread-messages" <%= unread.messages ? '' : 'hidden' %>><%= unread.messages %></span></a>
-        <a class="btn btn-ghost btn-sm icon-btn" href="/orders" title="<%= t('Заказы') %>">📦<span class="count" id="unread-orders" <%= unread.orders ? '' : 'hidden' %>><%= unread.orders %></span></a>
-        <a class="btn btn-ghost btn-sm" href="/account">👤 <%= user.username %></a>
+        <% if (user.role === 'admin') { %><a class="btn btn-ghost btn-sm admin-btn" href="/admin" title="<%= t('Админка') %>">🛠<span class="lbl-lg"> <%= t('Админка') %></span></a><% } %>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/messages" title="<%= t('Сообщения') %>" aria-label="<%= t('Сообщения') %>">✉️<span class="count" id="unread-messages" <%= unread.messages ? '' : 'hidden' %>><%= unread.messages %></span></a>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/orders" title="<%= t('Заказы') %>" aria-label="<%= t('Заказы') %>">📦<span class="count" id="unread-orders" <%= unread.orders ? '' : 'hidden' %>><%= unread.orders %></span></a>
+        <a class="btn btn-ghost btn-sm user-btn" href="/account" title="<%= t('Личный кабинет') %>">👤<span class="lbl-lg uname"> <%= user.username %></span></a>
       <% } else { %>
         <a class="btn btn-ghost btn-sm" href="/login"><%= t('Войти') %></a>
       <% } %>
+      <button class="burger" type="button" aria-label="<%= t('Меню') %>" aria-controls="site-nav" data-toggle-nav>☰</button>
     </div>
   </div>
 </header>
