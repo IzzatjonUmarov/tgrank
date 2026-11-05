@@ -305,3 +305,6 @@ pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
   .filters { padding: 12px 16px; }
 }
 @media (min-width: 981px) { .filters-box > summary { pointer-events: none; } }
+
+.logo img { display: block; flex: none; }
+.footer .logo { display: flex; align-items: center; gap: 8px; }

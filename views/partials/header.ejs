@@ -6,12 +6,23 @@
 <title><%= t(title) %> — <%= config.siteName %></title>
 <meta name="description" content="<%= typeof description !== 'undefined' ? description : t('Каталог и рейтинг Telegram-каналов, групп и ботов: статистика подписчиков, рост, отзывы и бесплатное продвижение.') %>">
 <link rel="stylesheet" href="/style.css?v=<%= assetVersion %>">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="icon" href="/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/icon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#2a7de1">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="<%= config.siteName %>">
+<meta property="og:title" content="<%= t(title) %> — <%= config.siteName %>">
+<meta property="og:description" content="<%= typeof description !== 'undefined' ? description : t('Каталог и рейтинг Telegram-каналов, групп и ботов: статистика подписчиков, рост, отзывы и бесплатное продвижение.') %>">
+<meta property="og:image" content="<%= config.baseUrl %>/og-image.png">
+<meta property="og:url" content="<%= config.baseUrl %><%= path %>">
+<meta name="twitter:card" content="summary_large_image">
 </head>
 <body>
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="logo" href="/">📊 <span><%= config.siteName %></span></a>
+    <a class="logo" href="/"><img src="/logo.svg" width="30" height="30" alt=""><span><%= config.siteName %></span></a>
     <nav class="nav" id="site-nav">
       <a href="/channels" class="<%= path === '/channels' ? 'active' : '' %>"><%= t('Каналы') %></a>
       <a href="/groups" class="<%= path === '/groups' ? 'active' : '' %>"><%= t('Группы') %></a>
