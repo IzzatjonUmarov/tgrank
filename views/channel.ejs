@@ -23,6 +23,7 @@
       <form method="post" action="/c/<%= channel.username %>/vote"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= votedToday ? 'btn-ghost' : 'btn-accent' %>" <%= votedToday ? 'disabled' : '' %>>👍 <%= votedToday ? t('Вы голосовали') : t('Голосовать') %> · <%= channel.votes %></button></form>
       <form method="post" action="/c/<%= channel.username %>/favorite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost"><%= isFav ? t('★ В избранном') : t('☆ В избранное') %></button></form>
       <% } %>
+      <% if (config.botUsername && !channel.is_private) { %><a class="btn btn-ghost" href="https://t.me/<%= config.botUsername %>?start=c_<%= channel.username %>" target="_blank" rel="noopener">🤖 <%= t('Проверить в боте') %></a><% } %>
       <button class="btn btn-ghost" data-copy="<%= config.baseUrl %>/c/<%= channel.username %>"><%= t('🔗 Поделиться') %></button>
     </div>
   </div>

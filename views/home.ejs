@@ -47,6 +47,15 @@
     <% newest.forEach((c) => { %><%- include('partials/row', { c }) %><% }) %></section>
 </div>
 
+<% if (config.botUsername) { %>
+<section class="panel bot-promo">
+  <div>
+    <h2>🤖 <%= t('Проверяйте каналы прямо в Telegram') %></h2>
+    <p class="muted"><%= t('Отправьте боту ссылку на канал — он покажет подписчиков, охваты, ERR и признаки накрутки. В любом чате наберите') %> <code>@<%= config.botUsername %> kunuz</code>.</p>
+  </div>
+  <a class="btn btn-primary" href="https://t.me/<%= config.botUsername %>" target="_blank" rel="noopener">@<%= config.botUsername %></a>
+</section>
+<% } %>
 <section class="cta">
   <h2><%= t('Есть свой канал, группа или бот?') %></h2>
   <p><%= t('Добавьте его в каталог, подтвердите владение и поднимайте в «Продвигаемые» каждый день — на этапе запуска это бесплатно.') %></p>

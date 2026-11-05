@@ -258,4 +258,4 @@ async function isChannelAdmin(username, telegramId) {
   return m.status === 'creator' || m.status === 'administrator';
 }
 
-module.exports = { isChannelAdmin, tmeGet, queueSize, parsePage, parsePreview, parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };
+module.exports = { botApi, isChannelAdmin, tmeGet, queueSize, parsePage, parsePreview, parseUsername, parseInvite, fetchInviteInfo, fetchChannelInfo, fetchPosts, checkTelegramAuth, parseCount };

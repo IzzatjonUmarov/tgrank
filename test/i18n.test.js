@@ -6,7 +6,8 @@ const assert = require('assert');
 const uz = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src', 'locales', 'uz.json'), 'utf8'));
 const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
 const missing = [];
-for (const f of walk(path.join(__dirname, '..', 'views'))) {
+const files = [...walk(path.join(__dirname, '..', 'views')), path.join(__dirname, '..', 'src', 'bot.js')];
+for (const f of files) {
   if (f.includes(`${path.sep}admin${path.sep}`)) continue;
   for (const m of fs.readFileSync(f, 'utf8').matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) {
     const key = m[1].replace(/\\'/g, "'").replace(/\\n/g, '\n');

@@ -135,6 +135,14 @@ CREATE TABLE IF NOT EXISTS user_ratings (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (order_id, from_user)
 );
+CREATE TABLE IF NOT EXISTS bot_users (
+  chat_id INTEGER PRIMARY KEY,
+  username TEXT,
+  lang TEXT NOT NULL DEFAULT 'uz',
+  checks INTEGER NOT NULL DEFAULT 0,
+  first_seen TEXT NOT NULL DEFAULT (datetime('now')),
+  last_seen TEXT NOT NULL DEFAULT (datetime('now'))
+);
 CREATE TABLE IF NOT EXISTS admin_log (
   id INTEGER PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,

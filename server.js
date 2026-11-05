@@ -8,6 +8,7 @@ const { updateAll } = require('./src/stats');
 const social = require('./src/social');
 const security = require('./src/security');
 const i18n = require('./src/i18n');
+const bot = require('./src/bot');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -31,6 +32,9 @@ app.get('/healthz', (req, res) => {
 });
 app.use(express.urlencoded({ extended: false, limit: '200kb', parameterLimit: 2000 }));
 app.use(express.json({ limit: '50kb' }));
+
+// Обновления от Telegram для бота: без сессии и CSRF, проверяется секретный заголовок
+app.post('/bot/webhook', bot.webhookHandler);
 app.use(cookieSession({
   name: 'tgr',
   secret: config.sessionSecret,
@@ -94,6 +98,7 @@ if (require.main === module) {
     if (config.starterList) importer.enqueueStarterList();
     importer.runWorker();
   }
+  bot.start();
   if (config.keepAlive) {
     const ping = () => fetch(`${config.baseUrl}/healthz`, { signal: AbortSignal.timeout(30_000) })
       .catch((e) => console.error('[keep-alive]', e.message));

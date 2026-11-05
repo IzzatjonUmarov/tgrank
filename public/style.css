@@ -271,3 +271,6 @@ pre.code { white-space: pre-wrap; overflow-wrap: anywhere; }
 .lang-switch a.active { background: var(--primary); color: #fff; }
 .lang-switch a:hover { text-decoration: none; }
 @media (max-width: 1100px) { .lang-switch { display: none; } .nav-open .lang-switch { display: flex; } }
+
+.bot-promo { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 24px; }
+.bot-promo h2 { margin-bottom: 4px; } .bot-promo p { margin: 0; }

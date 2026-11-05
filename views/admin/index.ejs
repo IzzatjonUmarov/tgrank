@@ -9,6 +9,7 @@
   <a class="kpi" href="/admin/reports"><span>Жалобы</span><b><%= counts.reports %></b></a>
   <a class="kpi" href="/admin/channels?status=approved&suspicious=1"><span>⚠️ Подозрение на накрутку</span><b><%= counts.suspicious %></b></a>
   <a class="kpi" href="/admin/import"><span>Очередь импорта</span><b><%= queue.queued || 0 %></b><small>добавлено: <%= queue.done || 0 %></small></a>
+  <div class="kpi"><span>🤖 Пользователи бота</span><b><%= bot.users || 0 %></b><small>проверок: <%= bot.checks || 0 %>, активных за сутки: <%= bot.active_day || 0 %></small></div>
   <div class="kpi"><span>Продвигаются</span><b><%= counts.boosted %></b></div>
   <div class="kpi"><span>Отзывы</span><b><%= counts.reviews %></b></div>
   <div class="kpi"><span>Новых каналов</span><b><%= counts.channels_day %></b><small>за сутки</small></div>

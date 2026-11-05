@@ -43,6 +43,7 @@ router.get('/', (req, res) => {
       (SELECT COUNT(*) FROM channels WHERE status = 'approved' AND fraud_score >= 25) AS suspicious`),
     queue: importer.queueStats(),
     statsRunning: isRunning(),
+    bot: require('../bot').botStats(),
   });
 });
 

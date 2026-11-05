@@ -6,7 +6,7 @@
       <p class="muted"><%= t('Каталог и рейтинг Telegram-каналов, групп и ботов.') %><br><%= t('Мы не связаны с Telegram FZ-LLC.') %></p>
     </div>
     <div><b><%= t('Каталог') %></b><a href="/channels"><%= t('Каналы') %></a><a href="/groups"><%= t('Группы') %></a><a href="/bots"><%= t('Боты') %></a><a href="/top"><%= t('Топ-100') %></a><a href="/ads"><%= t('💰 Реклама') %></a><a href="/users"><%= t('⭐ Рейтинг пользователей') %></a></div>
-    <div><b><%= t('Владельцам') %></b><a href="/add"><%= t('Добавить канал') %></a><a href="/pricing"><%= t('Тарифы') %></a><a href="/api-docs">API</a><a href="/faq">FAQ</a></div>
+    <div><b><%= t('Владельцам') %></b><a href="/add"><%= t('Добавить канал') %></a><a href="/pricing"><%= t('Тарифы') %></a><a href="/api-docs">API</a><a href="/faq">FAQ</a><% if (config.botUsername) { %><a href="https://t.me/<%= config.botUsername %>" target="_blank" rel="noopener">🤖 Telegram bot</a><% } %></div>
   </div>
 </footer>
 <script src="/app.js" defer></script>

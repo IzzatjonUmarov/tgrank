@@ -138,4 +138,21 @@ function fraudLevel(score) {
   return { key: 'ok', label: 'Признаков накрутки не найдено' };
 }
 
-module.exports = { savePosts, analyze, detectFraud, fraudLevel, dailyDeltas };
+// Метрики по загруженным постам без сохранения в базу (каналы вне каталога, проверка в боте)
+function metricsFromPosts(subscribers, posts) {
+  const mature = posts.filter((p) => Date.now() - Date.parse(p.date) >= DAY);
+  const use = (mature.length >= 3 ? mature : posts).slice(0, 30);
+  if (!use.length) return { avgReach: null, err: null, postsPerDay: null, engagement: null, ...detectFraud({ subscribers }, [], [], []) };
+  const views = use.reduce((s, p) => s + p.views, 0);
+  const avgReach = Math.round(views / use.length);
+  const span = posts.length >= 2 ? (Date.parse(posts[0].date) - Date.parse(posts[posts.length - 1].date)) / DAY : 0;
+  return {
+    avgReach,
+    err: subscribers ? Math.round((avgReach / subscribers) * 1000) / 10 : null,
+    postsPerDay: posts.length >= 2 ? Math.round((posts.length / Math.max(Math.abs(span), 1)) * 10) / 10 : null,
+    engagement: views ? Math.round((use.reduce((s, p) => s + p.reactions, 0) / views) * 1000) / 10 : 0,
+    ...detectFraud({ subscribers }, [], use, []),
+  };
+}
+
+module.exports = { metricsFromPosts, savePosts, analyze, detectFraud, fraudLevel, dailyDeltas };

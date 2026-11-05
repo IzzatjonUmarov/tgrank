@@ -81,17 +81,22 @@ async function processOne() {
   const uz = isUzbekMarket(info, page?.text);
   if (config.region === 'uz' && item.region_check && !uz.ok) { finish('skipped', 'не для узбекского рынка'); return true; }
 
-  const status = item.approve ? 'approved' : 'pending';
+  insertChannel(info, page, { approved: !!item.approve, categoryId: item.category_id, uz: uz.ok });
+  finish('done');
+  return true;
+}
+
+// Добавляет канал в каталог по уже загруженным профилю и постам (импорт, автопоиск, бот)
+function insertChannel(info, page, { approved = true, categoryId = null, uz = true } = {}) {
+  const status = approved ? 'approved' : 'pending';
   const { lastInsertRowid } = db.run(`INSERT INTO channels (username, type, title, description, avatar_url, category_id, language, subscribers, tg_verified, status, is_uz, last_checked_at, approved_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`,
     info.username, info.type, info.title, info.description, info.avatar_url,
-    item.category_id || guessCategoryId(info), guessLanguage(info), info.subscribers, info.tg_verified, status, uz.ok ? 1 : 0);
+    categoryId || guessCategoryId(info), guessLanguage(info), info.subscribers, info.tg_verified, status, uz ? 1 : 0);
   const id = Number(lastInsertRowid);
   recordStats(id, info.subscribers);
-  finish('done');
-  db.run(`UPDATE channels SET last_checked_at = datetime('now') WHERE id = ?`, id);
   applyPage(db.get('SELECT * FROM channels WHERE id = ?', id), info, page);
-  return true;
+  return id;
 }
 
 async function runWorker() {
@@ -107,4 +112,4 @@ function queueStats() {
   return Object.fromEntries(db.all('SELECT status, COUNT(*) AS n FROM import_queue GROUP BY status').map((r) => [r.status, r.n]));
 }
 
-module.exports = { enqueue, enqueueStarterList, runWorker, processOne, queueStats, stop: () => { stopped = true; } };
+module.exports = { insertChannel, enqueue, enqueueStarterList, runWorker, processOne, queueStats, stop: () => { stopped = true; } };

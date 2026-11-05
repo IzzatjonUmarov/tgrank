@@ -37,6 +37,11 @@ global.fetch = async (url, opts = {}) => {
   if (url.startsWith('https://api.telegram.org/')) {
     const body = JSON.parse(opts.body || '{}');
     const method = url.split('/').pop();
+    if (['sendMessage', 'answerInlineQuery', 'sendChatAction', 'answerCallbackQuery'].includes(method)) {
+      global.botCalls = global.botCalls || [];
+      global.botCalls.push({ method, body });
+      return { json: async () => ({ ok: true, result: true }) };
+    }
     if (method === 'getChatMember') {
       return { json: async () => (body.user_id === 777 ? { ok: true, result: { status: 'creator' } } : { ok: true, result: { status: 'member' } }) };
     }
@@ -136,6 +141,26 @@ global.fetch = async (url, opts = {}) => {
   assert.equal(sec.safeNext('/c/kunuz?tab=1'), '/c/kunuz?tab=1');
   assert.ok(sec.tokensEqual('abc', 'abc') && !sec.tokensEqual('abc', 'abd') && !sec.tokensEqual('', ''));
   assert.equal(sec.sameOriginPath('https://evil.com/x', '/admin'), '/admin');
+
+  // Бот: карточка канала из каталога, канал вне каталога, язык, инлайн-режим
+  const bot = require(R + 'bot');
+  const msg = (text, extra = {}) => ({ message: { chat: { id: 42, type: 'private' }, from: { id: 42, language_code: 'ru' }, text, ...extra } });
+  await bot.handleUpdate(msg('https://t.me/goodchan'));
+  let sent = global.botCalls.filter((c) => c.method === 'sendMessage').pop().body;
+  assert.ok(sent.text.includes('@goodchan') && sent.text.includes('Подписчики'), 'карточка на русском');
+  assert.ok(sent.reply_markup.inline_keyboard.flat().some((b) => b.url && b.url.endsWith('/c/goodchan')));
+  await bot.handleUpdate({ callback_query: { id: 'q1', from: { id: 42 }, data: 'lang:uz' } });
+  await bot.handleUpdate(msg('@fakechan'));
+  sent = global.botCalls.filter((c) => c.method === 'sendMessage').pop().body;
+  assert.ok(sent.text.includes('Obunachilar') && sent.text.includes('Nakrutka'), 'карточка на узбекском с предупреждением');
+  await bot.handleUpdate(msg('', { forward_origin: { type: 'channel', chat: { id: -100, type: 'channel', title: 'Secret' } } }));
+  sent = global.botCalls.filter((c) => c.method === 'sendMessage').pop().body;
+  assert.ok(sent.text.includes('yopiq kanal'), 'пересланный пост закрытого канала');
+  await bot.handleUpdate({ inline_query: { id: 'iq', from: { id: 42 }, query: 'good' } });
+  const inline = global.botCalls.filter((c) => c.method === 'answerInlineQuery').pop().body;
+  assert.ok(inline.results.length >= 1 && inline.results[0].input_message_content.message_text.includes('goodchan'));
+  assert.deepEqual(bot.extractUsername({ text: '/start c_kunuzofficial' }), { username: 'kunuzofficial' });
+  console.log('bot:', bot.botStats());
 
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);
