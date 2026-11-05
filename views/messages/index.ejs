@@ -1,7 +1,7 @@
 <%- include('../partials/header') %>
-<h1>✉️ Сообщения</h1>
+<h1><%= t('✉️ Сообщения') %></h1>
 <% if (!convs.length) { %>
-  <div class="panel empty"><p class="muted">Переписок пока нет. Написать можно владельцу канала со страницы канала или любому пользователю из его профиля.</p></div>
+  <div class="panel empty"><p class="muted"><%= t('Переписок пока нет. Написать можно владельцу канала со страницы канала или любому пользователю из его профиля.') %></p></div>
 <% } else { %>
 <div class="panel inbox" style="padding:0">
   <% convs.forEach((c) => { %>

@@ -1,39 +1,39 @@
 <%- include('../partials/header') %>
 <div class="narrow panel">
-  <h1>Настройки <%= h.handle(channel) %></h1>
-  <p class="muted small">Название, описание и аватар обновляются из Telegram автоматически.</p>
+  <h1><%= t('Настройки') %> <%= h.handle(channel) %></h1>
+  <p class="muted small"><%= t('Название, описание и аватар обновляются из Telegram автоматически.') %></p>
   <form method="post" class="form"><input type="hidden" name="_csrf" value="<%= csrf %>">
-    <label>Категория<select name="category_id"><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= channel.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
-    <label>Язык<select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= channel.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
-    <label>Теги<input name="tags" value="<%= channel.tags %>"></label>
-    <% if (channel.is_private) { %><label>Ссылка-приглашение <small class="muted">— обновите, если старая перестала работать</small><input name="invite_link" value="<%= channel.invite_link %>"></label><% } %>
+    <label><%= t('Категория') %><select name="category_id"><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= channel.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= t(c.name) %></option><% }) %></select></label>
+    <label><%= t('Язык') %><select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= channel.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+    <label><%= t('Теги') %><input name="tags" value="<%= channel.tags %>"></label>
+    <% if (channel.is_private) { %><label><%= t('Ссылка-приглашение') %> <small class="muted"><%= t('— обновите, если старая перестала работать') %></small><input name="invite_link" value="<%= channel.invite_link %>"></label><% } %>
 
     <input type="hidden" name="ads_section" value="1">
     <fieldset class="ads-box" id="ads">
-      <legend>💰 Реклама в канале</legend>
+      <legend><%= t('💰 Реклама в канале') %></legend>
       <% if (channel.owner_id && channel.owner_id !== user.id) { %>
-        <p class="small muted">Цены на рекламу указывает только подтверждённый владелец канала.<% if (channel.ads_enabled) { %> Реклама сейчас включена — снимите галочку и сохраните, чтобы её выключить.<% } %></p>
-        <% if (channel.ads_enabled) { %><label class="check"><input type="checkbox" name="ads_enabled" value="1" checked disabled> Канал берёт рекламу</label><% } %>
+        <p class="small muted"><%= t('Цены на рекламу указывает только подтверждённый владелец канала.') %><% if (channel.ads_enabled) { %> <%= t('Реклама сейчас включена — снимите галочку и сохраните, чтобы её выключить.') %><% } %></p>
+        <% if (channel.ads_enabled) { %><label class="check"><input type="checkbox" name="ads_enabled" value="1" checked disabled> <%= t('Канал берёт рекламу') %></label><% } %>
       <% } else if (!channel.owner_id) { %>
-        <p class="small muted">Принимать рекламу может только канал с подтверждённым владельцем. <a href="/c/<%= channel.username %>/claim">Подтвердить владение →</a></p>
+        <p class="small muted"><%= t('Принимать рекламу может только канал с подтверждённым владельцем.') %> <a href="/c/<%= channel.username %>/claim"><%= t('Подтвердить владение →') %></a></p>
       <% } else { %>
-      <label class="check"><input type="checkbox" name="ads_enabled" value="1" <%= channel.ads_enabled ? 'checked' : '' %>> Беру заказы на рекламу — показывать отметку «💰 Беру рекламу» и прайс</label>
-      <label>Контакт для рекламодателей <small class="muted">— @username или ссылка t.me</small><input name="ad_contact" value="<%= channel.ad_contact || '' %>" placeholder="@manager_username"></label>
-      <label>Валюта<select name="ad_currency"><% for (const [k, v] of Object.entries(CURRENCIES)) { %><option value="<%= k %>" <%= channel.ad_currency === k ? 'selected' : '' %>><%= k %> (<%= v %>)</option><% } %></select></label>
-      <div class="small"><b>Прайс</b> <span class="muted">— формат и цена; пустые строки не сохраняются</span></div>
+      <label class="check"><input type="checkbox" name="ads_enabled" value="1" <%= channel.ads_enabled ? 'checked' : '' %>> <%= t('Беру заказы на рекламу — показывать отметку «💰 Беру рекламу» и прайс') %></label>
+      <label><%= t('Контакт для рекламодателей') %> <small class="muted"><%= t('— @username или ссылка t.me') %></small><input name="ad_contact" value="<%= channel.ad_contact || '' %>" placeholder="@manager_username"></label>
+      <label><%= t('Валюта') %><select name="ad_currency"><% for (const [k, v] of Object.entries(CURRENCIES)) { %><option value="<%= k %>" <%= channel.ad_currency === k ? 'selected' : '' %>><%= k %> (<%= t(v) %>)</option><% } %></select></label>
+      <div class="small"><b><%= t('Прайс') %></b> <span class="muted"><%= t('— формат и цена; пустые строки не сохраняются') %></span></div>
       <datalist id="ad-formats"><% FORMATS.forEach((f) => { %><option value="<%= f %>"><% }) %></datalist>
       <% const rows = adPrices.concat(Array(Math.max(1, 5 - adPrices.length)).fill({ format: '', price: '' })).slice(0, 8); %>
       <% rows.forEach((p, i) => { %>
         <div class="price-row">
-          <input name="ad_format" list="ad-formats" value="<%= p.format %>" placeholder="<%= i === 0 ? '1/24' : i === 1 ? '2/48' : 'Формат' %>" maxlength="40">
-          <input name="ad_price" inputmode="numeric" value="<%= p.price %>" placeholder="Цена">
+          <input name="ad_format" list="ad-formats" value="<%= p.format %>" placeholder="<%= i === 0 ? '1/24' : i === 1 ? '2/48' : t('Формат') %>" maxlength="40">
+          <input name="ad_price" inputmode="numeric" value="<%= p.price %>" placeholder="<%= t('Цена') %>">
         </div>
       <% }) %>
-      <label>Условия <small class="muted">— скидки, тематики, которые не берёте, «цена договорная»</small><textarea name="ad_note" rows="3" maxlength="1000"><%= channel.ad_note || '' %></textarea></label>
+      <label><%= t('Условия') %> <small class="muted"><%= t('— скидки, тематики, которые не берёте, «цена договорная»') %></small><textarea name="ad_note" rows="3" maxlength="1000"><%= channel.ad_note || '' %></textarea></label>
       <% } %>
     </fieldset>
-    <button class="btn btn-primary">Сохранить</button>
+    <button class="btn btn-primary"><%= t('Сохранить') %></button>
   </form>
-  <form method="post" action="/account/channel/<%= channel.id %>/delete" data-confirm="Удалить канал из каталога вместе со статистикой?"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm">Удалить из каталога</button></form>
+  <form method="post" action="/account/channel/<%= channel.id %>/delete" data-confirm="<%= t('Удалить канал из каталога вместе со статистикой?') %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-danger btn-sm"><%= t('Удалить из каталога') %></button></form>
 </div>
 <%- include('../partials/footer') %>

@@ -1,19 +1,19 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
-  <h1>Регистрация</h1>
+  <h1><%= t('Регистрация') %></h1>
   <% if (config.botUsername && config.botToken) { %>
-    <p class="muted">Быстрее всего — через Telegram: один клик, без пароля. Так же проще подтвердить владение каналом.</p>
+    <p class="muted"><%= t('Быстрее всего — через Telegram: один клик, без пароля. Так же проще подтвердить владение каналом.') %></p>
     <%- include('partials/tg-login') %>
-    <div class="or">или по email</div>
+    <div class="or"><%= t('или по email') %></div>
   <% } %>
-  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <% if (error) { %><div class="flash flash-error"><%= t(error) %></div><% } %>
   <form method="post" action="/register" class="form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
-    <label>Имя<input name="username" required maxlength="32" value="<%= form.username || '' %>"></label>
+    <label><%= t('Имя') %><input name="username" required maxlength="32" value="<%= form.username || '' %>"></label>
     <label>Email<input type="email" name="email" required value="<%= form.email || '' %>" autocomplete="email"></label>
-    <label>Пароль <small class="muted">(от 6 символов)</small><input type="password" name="password" required minlength="6" autocomplete="new-password"></label>
-    <button class="btn btn-primary">Создать аккаунт</button>
+    <label><%= t('Пароль') %> <small class="muted"><%= t('(от 8 символов)') %></small><input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <button class="btn btn-primary"><%= t('Создать аккаунт') %></button>
   </form>
-  <p class="muted">Уже есть аккаунт? <a href="/login">Войдите</a>.</p>
+  <p class="muted"><%= t('Уже есть аккаунт?') %> <a href="/login"><%= t('Войдите') %></a>.</p>
 </div>
 <%- include('partials/footer') %>

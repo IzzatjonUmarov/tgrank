@@ -2,7 +2,6 @@
 const express = require('express');
 const db = require('../db');
 const social = require('../social');
-const ads = require('../ads');
 const { requireUser } = require('./guards');
 const { rateLimit } = require('../security');
 
@@ -53,7 +52,8 @@ router.post('/new', rateLimit('order', { max: 20, windowMs: 60 * 60_000, by: 'us
   const { lastInsertRowid } = db.run(`INSERT INTO orders (channel_id, channel_title, customer_id, executor_id, format, price, currency, publish_date, note)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, channel.id, channel.title, req.user.id, channel.owner_id, form.format, form.price, channel.ad_currency, form.publish_date, form.note);
   const order = db.get('SELECT * FROM orders WHERE id = ?', lastInsertRowid);
-  social.orderEvent(order, req.user.id, `📦 Новый заказ #${order.id}: ${form.format}${form.price ? ', ' + ads.fmtPrice(form.price, order.currency) : ''} в «${channel.title}».\n${form.note}`);
+  social.orderEvent(order, req.user.id, form.price ? '📦 Новый заказ #{id}: {format}, {priceText} в «{channel}».\n{note}' : '📦 Новый заказ #{id}: {format} в «{channel}».\n{note}',
+    { format: form.format, price: form.price, currency: order.currency, channel: channel.title, note: form.note });
   req.flash('success', 'Заказ отправлен владельцу канала. Ответ придёт в «Сообщения» и «Заказы».');
   res.redirect(`/orders/${order.id}`);
 });
@@ -71,7 +71,7 @@ router.get('/:id', (req, res) => {
   const otherId = isCustomer ? o.executor_id : o.customer_id;
   const conv = social.getOrCreateConversation(o.customer_id, o.executor_id, o.channel_id);
   res.render('orders/show', {
-    title: `Заказ #${o.id}`,
+    title: req.t('Заказ #{id}', { id: o.id }),
     order: o, isCustomer, conv,
     customer: social.publicUser(o.customer_id),
     executor: social.publicUser(o.executor_id),
@@ -116,7 +116,7 @@ router.post('/:id/:action', (req, res) => {
     return res.redirect(`/orders/${o.id}`);
   }
   db.run(`UPDATE orders SET status = ?, updated_at = datetime('now'), completed_at = ${t.to === 'completed' ? "datetime('now')" : 'completed_at'} WHERE id = ?`, t.to, o.id);
-  social.orderEvent(o, req.user.id, t.text.replace('{id}', o.id));
+  social.orderEvent(o, req.user.id, t.text);
   if (t.to === 'completed') social.refreshUserRating(o.executor_id);
   res.redirect(`/orders/${o.id}`);
 });

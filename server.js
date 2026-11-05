@@ -7,6 +7,7 @@ const db = require('./src/db');
 const { updateAll } = require('./src/stats');
 const social = require('./src/social');
 const security = require('./src/security');
+const i18n = require('./src/i18n');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -39,6 +40,8 @@ app.use(cookieSession({
   secure: config.baseUrl.startsWith('https'),
 }));
 
+app.use(i18n.middleware);
+
 // Текущий пользователь, CSRF-токен, flash-сообщения, хелперы для шаблонов
 app.use((req, res, next) => {
   if (!req.session.csrf) req.session.csrf = crypto.randomBytes(16).toString('hex');
@@ -54,7 +57,7 @@ app.use((req, res, next) => {
   res.locals.path = req.path;
   res.locals.query = req.query;
   res.locals.categories = db.all('SELECT * FROM categories ORDER BY sort, name');
-  res.locals.h = require('./src/helpers');
+  res.locals.h = require('./src/helpers').forLang(req.t);
   req.flash = (type, text) => { req.session.flash = { type, text }; };
   // Метка state для виджета входа Telegram (создаётся, только если кнопка показана)
   res.locals.tgState = () => (req.session.tgState ||= crypto.randomBytes(16).toString('hex'));

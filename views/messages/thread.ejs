@@ -1,28 +1,28 @@
 <%- include('../partials/header') %>
-<div class="crumbs"><a href="/messages">Сообщения</a> / <%= other.username %></div>
+<div class="crumbs"><a href="/messages"><%= t('Сообщения') %></a> / <%= other.username %></div>
 <div class="cols-main">
   <section class="panel">
     <div class="section-head"><h2><a href="/u/<%= other.id %>"><%= other.username %></a> <%- include('../partials/user-rating', { u: other }) %></h2>
-      <% if (channel) { %><a class="small" href="/c/<%= channel.username %>">по каналу «<%= channel.title %>»</a><% } %></div>
+      <% if (channel) { %><a class="small" href="/c/<%= channel.username %>"><%= t('по каналу «') %><%= channel.title %>»</a><% } %></div>
     <div class="chat" id="chat" data-conv="<%= conv.id %>" data-last="<%= messages.length ? messages[messages.length - 1].id : 0 %>">
-      <% if (!messages.length) { %><p class="muted small" id="chat-empty">Напишите первое сообщение.</p><% } %>
+      <% if (!messages.length) { %><p class="muted small" id="chat-empty"><%= t('Напишите первое сообщение.') %></p><% } %>
       <% messages.forEach((m) => { %>
-        <div class="msg <%= m.kind === 'system' ? 'system' : m.sender_id === user.id ? 'mine' : '' %>" id="m<%= m.id %>"><%= m.text %><% if (m.order_id) { %> <a href="/orders/<%= m.order_id %>">Открыть заказ →</a><% } %><time><%= m.created_at %> UTC</time></div>
+        <div class="msg <%= m.kind === 'system' ? 'system' : m.sender_id === user.id ? 'mine' : '' %>" id="m<%= m.id %>"><%= m.text %><% if (m.order_id) { %> <a href="/orders/<%= m.order_id %>"><%= t('Открыть заказ →') %></a><% } %><time><%= m.created_at %> UTC</time></div>
       <% }) %>
     </div>
     <form class="chat-form" method="post" action="/messages/<%= conv.id %>" id="chat-form">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
-      <textarea name="text" rows="2" maxlength="2000" required placeholder="Сообщение… (Enter — отправить, Shift+Enter — новая строка)"></textarea>
-      <button class="btn btn-primary">Отправить</button>
+      <textarea name="text" rows="2" maxlength="2000" required placeholder="<%= t('Сообщение… (Enter — отправить, Shift+Enter — новая строка)') %>"></textarea>
+      <button class="btn btn-primary"><%= t('Отправить') %></button>
     </form>
-    <p class="small muted">Не передавайте пароли и коды из SMS. Оплату за рекламу вы согласуете с владельцем напрямую.</p>
+    <p class="small muted"><%= t('Не передавайте пароли и коды из SMS. Оплату за рекламу вы согласуете с владельцем напрямую.') %></p>
   </section>
   <aside>
     <section class="panel">
-      <h3>Заказы с <%= other.username %></h3>
-      <% if (!orders.length) { %><p class="small muted">Заказов пока нет.</p><% } %>
-      <% orders.forEach((o) => { %><p class="small"><a href="/orders/<%= o.id %>">#<%= o.id %> · <%= o.channel_title %></a><br><span class="order-status os-<%= o.status %>"><%= ORDER_STATUS[o.status] %></span></p><% }) %>
-      <% if (channel && channel.id) { %><a class="btn btn-ghost btn-block btn-sm" href="/orders/new?channel=<%= channel.id %>">📦 Новый заказ</a><% } %>
+      <h3><%= t('Заказы с') %> <%= other.username %></h3>
+      <% if (!orders.length) { %><p class="small muted"><%= t('Заказов пока нет.') %></p><% } %>
+      <% orders.forEach((o) => { %><p class="small"><a href="/orders/<%= o.id %>">#<%= o.id %> · <%= o.channel_title %></a><br><span class="order-status os-<%= o.status %>"><%= t(ORDER_STATUS[o.status]) %></span></p><% }) %>
+      <% if (channel && channel.id) { %><a class="btn btn-ghost btn-block btn-sm" href="/orders/new?channel=<%= channel.id %>"><%= t('📦 Новый заказ') %></a><% } %>
     </section>
   </aside>
 </div>

@@ -1,18 +1,18 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
-  <h1>Вход</h1>
+  <h1><%= t('Вход') %></h1>
   <% if (config.botUsername && config.botToken) { %>
-    <p class="muted">Быстрее всего — через Telegram: один клик, без пароля. Так же проще подтвердить владение каналом.</p>
+    <p class="muted"><%= t('Быстрее всего — через Telegram: один клик, без пароля. Так же проще подтвердить владение каналом.') %></p>
     <%- include('partials/tg-login', { next }) %>
-    <div class="or">или по email</div>
+    <div class="or"><%= t('или по email') %></div>
   <% } %>
-  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <% if (error) { %><div class="flash flash-error"><%= t(error) %></div><% } %>
   <form method="post" action="/login" class="form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="next" value="<%= next %>">
     <label>Email<input type="email" name="email" required value="<%= email %>" autocomplete="email"></label>
-    <label>Пароль<input type="password" name="password" required autocomplete="current-password"></label>
-    <button class="btn btn-primary">Войти</button>
+    <label><%= t('Пароль') %><input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn btn-primary"><%= t('Войти') %></button>
   </form>
-  <p class="muted">Нет аккаунта? <a href="/register">Зарегистрируйтесь</a> — это бесплатно.</p>
+  <p class="muted"><%= t('Нет аккаунта?') %> <a href="/register"><%= t('Зарегистрируйтесь') %></a> <%= t('— это бесплатно.') %></p>
 </div>
 <%- include('partials/footer') %>

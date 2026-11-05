@@ -57,7 +57,8 @@ function rateLimit(name, { max, windowMs, by = 'ip' }) {
     const r = hit(`${name}:${who}`, max, windowMs);
     if (r.ok) return next();
     res.set('Retry-After', String(r.retryAfter));
-    const msg = `Слишком много попыток. Повторите через ${Math.ceil(r.retryAfter / 60)} мин.`;
+    const tpl = 'Слишком много попыток. Повторите через {n} мин.';
+    const msg = req.t ? req.t(tpl, { n: Math.ceil(r.retryAfter / 60) }) : tpl.replace('{n}', Math.ceil(r.retryAfter / 60));
     if (req.path.startsWith('/api/') || req.get('x-requested-with') === 'fetch' || req.accepts(['html', 'json']) === 'json') {
       return res.status(429).json({ error: msg });
     }

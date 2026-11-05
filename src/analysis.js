@@ -1,6 +1,7 @@
 // Аналитика канала: охваты, ERR, вовлечённость, частота постов и оценка риска накрутки.
 // Оценка эвристическая: это сигнал для пользователя и модератора, а не доказательство.
 const db = require('./db');
+const { fill } = require('./i18n');
 
 const DAY = 86400_000;
 const median = (a) => {
@@ -44,7 +45,8 @@ function dailyDeltas(history) {
 function detectFraud(channel, history, posts, reachHistory) {
   const reasons = [];
   let score = 0;
-  const add = (points, text) => { score += points; reasons.push({ points, text }); };
+  // Причина хранится как шаблон + параметры: на сайте она переводится на язык читателя
+  const add = (points, tpl, params = {}) => { score += points; reasons.push({ points, tpl, params, text: fill(tpl, params) }); };
   const subs = channel.subscribers;
 
   // 1. Резкие скачки подписчиков на фоне обычного роста
@@ -55,13 +57,15 @@ function detectFraud(channel, history, posts, reachHistory) {
     if (spikes.length) {
       const top = spikes.reduce((a, b) => (b.delta > a.delta ? b : a));
       add(Math.min(45, 30 + (spikes.length - 1) * 8),
-        `Резкий прирост +${fmt(top.delta)} подписчиков за сутки (${top.date}) при обычном изменении около ±${fmt(typical)} в день` +
-        (spikes.length > 1 ? `; таких скачков: ${spikes.length}` : ''));
+        spikes.length > 1
+          ? 'Резкий прирост +{delta} подписчиков за сутки ({date}) при обычном изменении около ±{typical} в день; таких скачков: {count}'
+          : 'Резкий прирост +{delta} подписчиков за сутки ({date}) при обычном изменении около ±{typical} в день',
+        { delta: fmt(top.delta), date: top.date, typical: fmt(typical), count: spikes.length });
 
       // 2. Отписка после скачка — боты списываются Telegram или «отваливаются»
       const idx = deltas.indexOf(top);
       const after = deltas.slice(idx + 1, idx + 8).reduce((s, d) => s + Math.min(0, d.delta), 0);
-      if (-after > top.delta * 0.3) add(20, `После скачка за неделю ушло ${fmt(-after)} подписчиков — так часто ведут себя накрученные аудитории`);
+      if (-after > top.delta * 0.3) add(20, 'После скачка за неделю ушло {n} подписчиков — так часто ведут себя накрученные аудитории', { n: fmt(-after) });
     }
   }
 
@@ -70,18 +74,18 @@ function detectFraud(channel, history, posts, reachHistory) {
     const views = posts.map((p) => p.views);
     const reach = mean(views);
     const err = (reach / subs) * 100;
-    if (subs >= 3000 && err < 2) add(35, `Охват поста ${err.toFixed(1)}% от подписчиков — очень мало (обычно 10–40%): большая часть аудитории не читает канал`);
-    else if (subs >= 3000 && err < 5) add(20, `Охват поста ${err.toFixed(1)}% от подписчиков — ниже нормы (обычно 10–40%)`);
-    if (err > 150) add(20, `Просмотров в среднем больше, чем подписчиков (${err.toFixed(0)}%) — возможна накрутка просмотров`);
+    if (subs >= 3000 && err < 2) add(35, 'Охват поста {err}% от подписчиков — очень мало (обычно 10–40%): большая часть аудитории не читает канал', { err: err.toFixed(1) });
+    else if (subs >= 3000 && err < 5) add(20, 'Охват поста {err}% от подписчиков — ниже нормы (обычно 10–40%)', { err: err.toFixed(1) });
+    if (err > 150) add(20, 'Просмотров в среднем больше, чем подписчиков ({err}%) — возможна накрутка просмотров', { err: err.toFixed(0) });
 
     if (posts.length >= 8) {
       const cv = Math.sqrt(mean(views.map((v) => (v - reach) ** 2))) / (reach || 1);
-      if (cv < 0.08) add(25, `Просмотры постов почти одинаковые (разброс ${(cv * 100).toFixed(0)}%) — у живой аудитории разброс обычно 20% и больше`);
+      if (cv < 0.08) add(25, 'Просмотры постов почти одинаковые (разброс {cv}%) — у живой аудитории разброс обычно 20% и больше', { cv: (cv * 100).toFixed(0) });
     }
 
     const reactions = posts.reduce((s, p) => s + p.reactions, 0);
     const totalViews = views.reduce((s, v) => s + v, 0) || 1;
-    if (reactions / totalViews > 0.15 && reactions > 200) add(10, `Аномально много реакций: ${(reactions / totalViews * 100).toFixed(0)}% от просмотров (обычно 1–5%)`);
+    if (reactions / totalViews > 0.15 && reactions > 200) add(10, 'Аномально много реакций: {pct}% от просмотров (обычно 1–5%)', { pct: (reactions / totalViews * 100).toFixed(0) });
   }
 
   // 6. Подписчики растут, а охват — нет
@@ -91,7 +95,7 @@ function detectFraud(channel, history, posts, reachHistory) {
     if (span >= 14 && first.avg_reach > 0 && first.subscribers > 0) {
       const subsGrowth = last.subscribers / first.subscribers - 1;
       const reachGrowth = last.avg_reach / first.avg_reach - 1;
-      if (subsGrowth > 0.3 && reachGrowth < 0.05) add(20, `За ${Math.round(span)} дн. подписчиков стало больше на ${(subsGrowth * 100).toFixed(0)}%, а охват не вырос`);
+      if (subsGrowth > 0.3 && reachGrowth < 0.05) add(20, 'За {days} дн. подписчиков стало больше на {pct}%, а охват не вырос', { days: Math.round(span), pct: (subsGrowth * 100).toFixed(0) });
     }
   }
 

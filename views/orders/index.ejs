@@ -1,19 +1,19 @@
 <%- include('../partials/header') %>
-<h1>📦 Заказы</h1>
+<h1><%= t('📦 Заказы') %></h1>
 <% const table = (rows, mine) => { %>
-  <% if (!rows.length) { %><p class="muted small">Пока пусто.</p><% } else { %>
+  <% if (!rows.length) { %><p class="muted small"><%= t('Пока пусто.') %></p><% } else { %>
   <div class="table-wrap"><table class="table">
-    <thead><tr><th>#</th><th>Канал</th><th><%= mine ? 'Заказчик' : 'Исполнитель' %></th><th>Формат</th><th class="r">Цена</th><th>Статус</th><th>Обновлён</th></tr></thead>
+    <thead><tr><th>#</th><th><%= t('Канал') %></th><th><%= mine ? t('Заказчик') : t('Исполнитель') %></th><th><%= t('Формат') %></th><th class="r"><%= t('Цена') %></th><th><%= t('Статус') %></th><th><%= t('Обновлён') %></th></tr></thead>
     <tbody><% rows.forEach((o) => { %>
       <tr data-href="/orders/<%= o.id %>"><td><a href="/orders/<%= o.id %>">#<%= o.id %></a></td><td><%= o.channel_title %></td>
         <td><%= mine ? o.customer_name : o.executor_name %></td><td><%= o.format %></td>
-        <td class="r"><%= o.price ? h.ads.fmtPrice(o.price, o.currency) : 'договорная' %></td>
-        <td><span class="order-status os-<%= o.status %>"><%= ORDER_STATUS[o.status] %></span></td><td class="small"><%= h.date(o.updated_at) %></td></tr>
+        <td class="r"><%= o.price ? h.ads.fmtPrice(o.price, o.currency) : t('договорная') %></td>
+        <td><span class="order-status os-<%= o.status %>"><%= t(ORDER_STATUS[o.status]) %></span></td><td class="small"><%= h.date(o.updated_at) %></td></tr>
     <% }) %></tbody>
   </table></div>
   <% } %>
 <% } %>
-<section class="panel"><h2>Входящие — мои каналы</h2><% table(incoming, true) %></section>
-<section class="panel"><h2>Исходящие — я заказчик</h2><% table(outgoing, false) %>
-  <a class="btn btn-ghost btn-sm" href="/ads">💰 Найти канал для рекламы</a></section>
+<section class="panel"><h2><%= t('Входящие — мои каналы') %></h2><% table(incoming, true) %></section>
+<section class="panel"><h2><%= t('Исходящие — я заказчик') %></h2><% table(outgoing, false) %>
+  <a class="btn btn-ghost btn-sm" href="/ads"><%= t('💰 Найти канал для рекламы') %></a></section>
 <%- include('../partials/footer') %>

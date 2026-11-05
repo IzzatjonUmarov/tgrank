@@ -79,7 +79,7 @@ router.post('/channel/:id/edit', (req, res) => {
 router.post('/channel/:id/delete', (req, res) => {
   const c = ownChannel(req, res); if (!c) return;
   db.run('DELETE FROM channels WHERE id = ?', c.id);
-  req.flash('success', `@${c.username} удалён из каталога.`);
+  req.flash('success', req.t('{name} удалён из каталога.', { name: '@' + c.username }));
   res.redirect('/account');
 });
 

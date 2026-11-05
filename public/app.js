@@ -1,3 +1,19 @@
+// Язык страницы: подписи в скриптах и формат дат
+const LANG = document.documentElement.lang === 'ru' ? 'ru' : 'uz';
+const TEXT = {
+  copied: { ru: 'Скопировано ✔', uz: 'Nusxa olindi ✔' },
+  openOrder: { ru: ' Открыть заказ →', uz: ' Buyurtmani ochish →' },
+  sendFailed: { ru: 'Не удалось отправить сообщение.', uz: 'Xabarni yuborib boʻlmadi.' },
+};
+const tr = (key) => TEXT[key][LANG];
+// В браузерах нет узбекских сокращений месяцев — форматируем сами
+const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+const fmtDate = (d, short) => {
+  d = new Date(d);
+  if (LANG === 'ru') return short ? d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : d.toLocaleDateString('ru-RU');
+  return short ? `${d.getDate()} ${UZ_MONTHS[d.getMonth()]}` : `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+};
+
 // Поведение страниц без инлайн-скриптов (их запрещает Content-Security-Policy)
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-toggle-nav]')) document.body.classList.toggle('nav-open');
@@ -24,7 +40,7 @@ document.addEventListener('click', (e) => {
   if (!el) return;
   navigator.clipboard?.writeText(el.dataset.copy).then(() => {
     const old = el.textContent;
-    el.textContent = 'Скопировано ✔';
+    el.textContent = tr('copied');
     setTimeout(() => { el.textContent = old; }, 1200);
   });
 });
@@ -77,13 +93,13 @@ function lineChart(box) {
   pts.forEach((p, i) => {
     if (i % step === 0 || i === pts.length - 1) {
       svg.append(mk('text', { x: xOf(i, W), y: H - 6, 'text-anchor': 'middle', 'font-size': 11, fill: cssVar('--muted') },
-        new Date(p.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })));
+        fmtDate(p.date, true)));
     }
   });
   const path = pts.map((p, i) => `${i ? 'L' : 'M'}${xOf(i, W).toFixed(1)},${y(p.subscribers).toFixed(1)}`).join('');
   svg.append(mk('path', { d: `${path}L${xOf(pts.length - 1, W)},${H - P.b}L${P.l},${H - P.b}Z`, fill: cssVar('--primary'), 'fill-opacity': 0.1 }));
   svg.append(mk('path', { d: path, fill: 'none', stroke: cssVar('--primary'), 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke' }));
-  hover((i) => ({ text: `${new Date(pts[i].date).toLocaleDateString('ru-RU')}: ${pts[i].subscribers.toLocaleString('ru-RU')}`, cy: y(pts[i].subscribers) }));
+  hover((i) => ({ text: `${fmtDate(pts[i].date)}: ${pts[i].subscribers.toLocaleString('ru-RU')}`, cy: y(pts[i].subscribers) }));
   box.append(svg);
 }
 
@@ -127,7 +143,7 @@ document.querySelectorAll('.chart-bars').forEach(barChart);
     el.append(document.createTextNode(m.text));
     if (m.order_id) {
       const a = document.createElement('a');
-      a.href = '/orders/' + m.order_id; a.textContent = ' Открыть заказ →';
+      a.href = '/orders/' + m.order_id; a.textContent = tr('openOrder');
       el.append(a);
     }
     const t = document.createElement('time'); t.textContent = m.at + ' UTC';
@@ -161,7 +177,7 @@ document.querySelectorAll('.chart-bars').forEach(barChart);
         body: new URLSearchParams(new FormData(form)),
       });
       const data = await r.json().catch(() => ({}));
-      if (!r.ok) { alert(data.error || 'Не удалось отправить сообщение.'); return; }
+      if (!r.ok) { alert(data.error || tr('sendFailed')); return; }
       textarea.value = '';
       await poll();
     } finally { btn.disabled = false; textarea.focus(); }

@@ -1,43 +1,43 @@
 <%- include('../partials/header') %>
-<div class="crumbs"><a href="/orders">Заказы</a> / #<%= order.id %></div>
+<div class="crumbs"><a href="/orders"><%= t('Заказы') %></a> / #<%= order.id %></div>
 <% const act = (action, label, cls = 'btn-ghost', confirm = '') => `<form method="post" action="/orders/${order.id}/${action}"${confirm ? ` data-confirm="${confirm}"` : ''}><input type="hidden" name="_csrf" value="${csrf}"><button class="btn ${cls} btn-sm">${label}</button></form>`; %>
 <div class="cols-main">
   <section class="panel">
-    <h1>Заказ #<%= order.id %> <span class="order-status os-<%= order.status %>"><%= ORDER_STATUS[order.status] %></span></h1>
+    <h1><%= t('Заказ #') %><%= order.id %> <span class="order-status os-<%= order.status %>"><%= t(ORDER_STATUS[order.status]) %></span></h1>
     <dl class="dl dl-left">
-      <dt>Канал</dt><dd><% if (order.channel_username) { %><a href="/c/<%= order.channel_username %>"><%= order.channel_title %></a><% } else { %><%= order.channel_title %><% } %></dd>
-      <dt>Заказчик</dt><dd><a href="/u/<%= customer.id %>"><%= customer.username %></a> <%- include('../partials/user-rating', { u: customer }) %></dd>
-      <dt>Исполнитель</dt><dd><a href="/u/<%= executor.id %>"><%= executor.username %></a> <%- include('../partials/user-rating', { u: executor }) %></dd>
-      <dt>Формат</dt><dd><%= order.format %></dd>
-      <dt>Цена</dt><dd><%= order.price ? h.ads.fmtPrice(order.price, order.currency) : 'договорная' %></dd>
-      <dt>Дата публикации</dt><dd><%= order.publish_date || 'по договорённости' %></dd>
-      <dt>Создан</dt><dd><%= h.date(order.created_at) %></dd>
+      <dt><%= t('Канал') %></dt><dd><% if (order.channel_username) { %><a href="/c/<%= order.channel_username %>"><%= order.channel_title %></a><% } else { %><%= order.channel_title %><% } %></dd>
+      <dt><%= t('Заказчик') %></dt><dd><a href="/u/<%= customer.id %>"><%= customer.username %></a> <%- include('../partials/user-rating', { u: customer }) %></dd>
+      <dt><%= t('Исполнитель') %></dt><dd><a href="/u/<%= executor.id %>"><%= executor.username %></a> <%- include('../partials/user-rating', { u: executor }) %></dd>
+      <dt><%= t('Формат') %></dt><dd><%= order.format %></dd>
+      <dt><%= t('Цена') %></dt><dd><%= order.price ? h.ads.fmtPrice(order.price, order.currency) : t('договорная') %></dd>
+      <dt><%= t('Дата публикации') %></dt><dd><%= order.publish_date || t('по договорённости') %></dd>
+      <dt><%= t('Создан') %></dt><dd><%= h.date(order.created_at) %></dd>
     </dl>
-    <h3>Что разместить</h3>
+    <h3><%= t('Что разместить') %></h3>
     <p class="ad-note"><%= order.note %></p>
     <div class="actions">
-      <% if (!isCustomer && order.status === 'new') { %><%- act('accept', '✅ Принять', 'btn-primary') %><%- act('decline', '❌ Отклонить', 'btn-danger', 'Отклонить заказ?') %><% } %>
-      <% if (!isCustomer && order.status === 'accepted') { %><%- act('done', '📢 Реклама размещена', 'btn-primary') %><% } %>
-      <% if (isCustomer && order.status === 'done') { %><%- act('complete', '🏁 Подтвердить выполнение', 'btn-primary') %><%- act('reopen', '↩️ Не размещено, вернуть в работу') %><% } %>
-      <% if (isCustomer && order.status === 'accepted') { %><%- act('complete', '🏁 Заказ выполнен', 'btn-ghost', 'Подтвердить, что реклама размещена?') %><% } %>
-      <% if (isCustomer && ['new', 'accepted'].includes(order.status)) { %><%- act('cancel', 'Отменить заказ', 'btn-danger', 'Отменить заказ?') %><% } %>
-      <a class="btn btn-ghost btn-sm" href="/messages/<%= conv.id %>">✉️ Переписка</a>
+      <% if (!isCustomer && order.status === 'new') { %><%- act('accept', t('✅ Принять'), 'btn-primary') %><%- act('decline', t('❌ Отклонить'), 'btn-danger', t('Отклонить заказ?')) %><% } %>
+      <% if (!isCustomer && order.status === 'accepted') { %><%- act('done', t('📢 Реклама размещена'), 'btn-primary') %><% } %>
+      <% if (isCustomer && order.status === 'done') { %><%- act('complete', t('🏁 Подтвердить выполнение'), 'btn-primary') %><%- act('reopen', t('↩️ Не размещено, вернуть в работу')) %><% } %>
+      <% if (isCustomer && order.status === 'accepted') { %><%- act('complete', t('🏁 Заказ выполнен'), 'btn-ghost', t('Подтвердить, что реклама размещена?')) %><% } %>
+      <% if (isCustomer && ['new', 'accepted'].includes(order.status)) { %><%- act('cancel', t('Отменить заказ'), 'btn-danger', t('Отменить заказ?')) %><% } %>
+      <a class="btn btn-ghost btn-sm" href="/messages/<%= conv.id %>"><%= t('✉️ Переписка') %></a>
     </div>
-    <% if (order.status === 'done' && !isCustomer) { %><p class="small muted">Ждём, пока заказчик подтвердит размещение.</p><% } %>
+    <% if (order.status === 'done' && !isCustomer) { %><p class="small muted"><%= t('Ждём, пока заказчик подтвердит размещение.') %></p><% } %>
   </section>
   <aside>
     <section class="panel">
-      <h3>Оценка <%= isCustomer ? 'исполнителя' : 'заказчика' %></h3>
+      <h3><%= t('Оценка') %> <%= isCustomer ? t('исполнителя') : t('заказчика') %></h3>
       <% if (order.status !== 'completed') { %>
-        <p class="small muted">Оценку от 1 до 10 можно поставить после завершения заказа. Из оценок складывается рейтинг пользователей.</p>
+        <p class="small muted"><%= t('Оценку от 1 до 10 можно поставить после завершения заказа. Из оценок складывается рейтинг пользователей.') %></p>
       <% } else { %>
         <form method="post" action="/orders/<%= order.id %>/rate" class="form">
           <input type="hidden" name="_csrf" value="<%= csrf %>">
           <div class="score-pick"><% for (let i = 1; i <= 10; i++) { %><input type="radio" id="s<%= i %>" name="score" value="<%= i %>" <%= myRating && myRating.score === i ? 'checked' : '' %> required><label for="s<%= i %>"><%= i %></label><% } %></div>
-          <label>Отзыв <small class="muted">— необязательно</small><textarea name="text" rows="3" maxlength="1000"><%= myRating ? myRating.text : '' %></textarea></label>
-          <button class="btn btn-primary btn-sm"><%= myRating ? 'Изменить оценку' : 'Поставить оценку' %></button>
+          <label><%= t('Отзыв') %> <small class="muted"><%= t('— необязательно') %></small><textarea name="text" rows="3" maxlength="1000"><%= myRating ? myRating.text : '' %></textarea></label>
+          <button class="btn btn-primary btn-sm"><%= myRating ? t('Изменить оценку') : t('Поставить оценку') %></button>
         </form>
-        <% if (theirRating) { %><p class="small">Вам поставили: <b><%= theirRating.score %>/10</b><% if (theirRating.text) { %> — «<%= theirRating.text %>»<% } %></p><% } %>
+        <% if (theirRating) { %><p class="small"><%= t('Вам поставили:') %> <b><%= theirRating.score %>/10</b><% if (theirRating.text) { %> — «<%= theirRating.text %>»<% } %></p><% } %>
       <% } %>
     </section>
   </aside>

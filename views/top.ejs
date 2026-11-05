@@ -1,26 +1,26 @@
 <%- include('partials/header') %>
-<h1>🏆 Рейтинг Telegram: <%= h.TYPES_PLURAL[type].toLowerCase() %></h1>
+<h1><%= t('🏆 Рейтинг Telegram:') %> <%= h.TYPES_PLURAL[type].toLowerCase() %></h1>
 <div class="tabs">
   <% for (const [k, v] of Object.entries(h.TYPES_PLURAL)) { %><a class="<%= type === k ? 'active' : '' %>" href="<%= h.qs(query, { type: k }) %>"><%= v %></a><% } %>
 </div>
-<p class="small"><a href="/users">⭐ Рейтинг пользователей по выполненным заказам →</a></p>
+<p class="small"><a href="/users"><%= t('⭐ Рейтинг пользователей по выполненным заказам →') %></a></p>
 <div class="tabs tabs-sub">
-  <% for (const [k, v] of Object.entries(TOP_TABS)) { %><a class="<%= sort === k ? 'active' : '' %>" href="<%= h.qs(query, { by: k }) %>"><%= v %></a><% } %>
+  <% for (const [k, v] of Object.entries(TOP_TABS)) { %><a class="<%= sort === k ? 'active' : '' %>" href="<%= h.qs(query, { by: k }) %>"><%= t(v) %></a><% } %>
 </div>
 <form class="inline-filters" method="get">
   <input type="hidden" name="type" value="<%= type %>"><input type="hidden" name="by" value="<%= sort %>">
-  <select name="category" data-autosubmit><option value="">Все категории</option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= category === c.slug ? 'selected' : '' %>><%= c.name %></option><% }) %></select>
-  <label class="check-inline"><input type="checkbox" name="clean" value="1" <%= clean ? 'checked' : '' %> data-autosubmit> Без подозрений на накрутку</label>
-  <select name="language" data-autosubmit><option value="">Все языки</option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= language === k ? 'selected' : '' %>><%= v %></option><% } %></select>
+  <select name="category" data-autosubmit><option value=""><%= t('Все категории') %></option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= category === c.slug ? 'selected' : '' %>><%= t(c.name) %></option><% }) %></select>
+  <label class="check-inline"><input type="checkbox" name="clean" value="1" <%= clean ? 'checked' : '' %> data-autosubmit> <%= t('Без подозрений на накрутку') %></label>
+  <select name="language" data-autosubmit><option value=""><%= t('Все языки') %></option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= language === k ? 'selected' : '' %>><%= v %></option><% } %></select>
 </form>
 <div class="panel table-wrap">
 <table class="table">
-  <thead><tr><th>#</th><th>Название</th><th class="r">Подписчики</th><th class="r">Сутки</th><th class="r">Неделя</th><th class="r">Месяц</th><th class="r hide-sm">Охват</th><th class="r hide-sm">ERR</th><th class="r hide-sm">Голоса</th><th class="r hide-sm">Оценка</th></tr></thead>
+  <thead><tr><th>#</th><th><%= t('Название') %></th><th class="r"><%= t('Подписчики') %></th><th class="r"><%= t('Сутки') %></th><th class="r"><%= t('Неделя') %></th><th class="r"><%= t('Месяц') %></th><th class="r hide-sm"><%= t('Охват') %></th><th class="r hide-sm">ERR</th><th class="r hide-sm"><%= t('Голоса') %></th><th class="r hide-sm"><%= t('Оценка') %></th></tr></thead>
   <tbody>
   <% items.forEach((c, i) => { %>
     <tr data-href="/c/<%= c.username %>">
       <td class="pos"><%= i + 1 %></td>
-      <td><a class="tcell" href="/c/<%= c.username %>"><%- include('partials/avatar', { c }) %><span><b><%= c.title %></b><% if (c.fraud_score >= 25) { %> <span class="badge warn" title="Подозрение на накрутку">⚠️</span><% } %><% if (c.ads_enabled && c.owner_id) { %> <span class="badge ads" title="Берёт рекламу">💰</span><% } %><br><small class="muted"><%= h.handle(c) %><% if (c.category_name) { %> · <%= c.category_name %><% } %></small></span></a></td>
+      <td><a class="tcell" href="/c/<%= c.username %>"><%- include('partials/avatar', { c }) %><span><b><%= c.title %></b><% if (c.fraud_score >= 25) { %> <span class="badge warn" title="<%= t('Подозрение на накрутку') %>">⚠️</span><% } %><% if (c.ads_enabled && c.owner_id) { %> <span class="badge ads" title="<%= t('Берёт рекламу') %>">💰</span><% } %><br><small class="muted"><%= h.handle(c) %><% if (c.category_name) { %> · <%= t(c.category_name) %><% } %></small></span></a></td>
       <td class="r"><b><%= h.num(c.subscribers) %></b></td>
       <td class="r"><%- h.delta(c.growth_day) %></td>
       <td class="r"><%- h.delta(c.growth_week) %></td>
@@ -31,7 +31,7 @@
       <td class="r hide-sm"><%= c.rating_count ? c.rating_avg.toFixed(1) : '—' %></td>
     </tr>
   <% }) %>
-  <% if (!items.length) { %><tr><td colspan="10" class="muted">Нет данных.</td></tr><% } %>
+  <% if (!items.length) { %><tr><td colspan="10" class="muted"><%= t('Нет данных.') %></td></tr><% } %>
   </tbody>
 </table>
 </div>

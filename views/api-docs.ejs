@@ -1,12 +1,12 @@
 <%- include('partials/header') %>
 <div class="narrow">
 <h1>API</h1>
-<p class="muted">Открытый JSON API, без ключа. Бесплатно на этапе запуска. CORS разрешён.</p>
+<p class="muted"><%= t('Открытый JSON API, без ключа. Бесплатно на этапе запуска. CORS разрешён.') %></p>
 <% [
-  ['GET /api/channels', 'Список. Параметры: q, type (channel|group|bot), category, language, sort (subscribers, growth_day, growth_week, growth_month, votes, rating, new), page, limit (≤100).'],
-  ['GET /api/channels/:username', 'Карточка канала с местом в рейтинге.'],
-  ['GET /api/channels/:username/stats?days=90', 'История подписчиков по дням (≤365).'],
-  ['GET /api/categories', 'Категории с количеством каналов.'],
+  ['GET /api/channels', t('Список. Параметры: q, type (channel|group|bot), category, language, sort (subscribers, growth_day, growth_week, growth_month, votes, rating, new), page, limit (≤100).')],
+  ['GET /api/channels/:username', t('Карточка канала с местом в рейтинге.')],
+  ['GET /api/channels/:username/stats?days=90', t('История подписчиков по дням (≤365).')],
+  ['GET /api/categories', t('Категории с количеством каналов.')],
 ].forEach(([e, d]) => { %>
   <div class="panel"><code><%= e %></code><p class="small"><%= d %></p></div>
 <% }) %>

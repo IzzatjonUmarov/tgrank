@@ -45,10 +45,22 @@ function sendMessage(convId, senderId, text, { kind = 'text', orderId = null } =
   return Number(lastInsertRowid);
 }
 
-// Служебное сообщение о заказе в переписку заказчика и исполнителя
-function orderEvent(order, actorId, text) {
+// Служебное сообщение о заказе: хранится как шаблон + параметры и переводится при показе
+function orderEvent(order, actorId, tpl, params = {}) {
   const conv = getOrCreateConversation(order.customer_id, order.executor_id, order.channel_id);
-  sendMessage(conv.id, actorId, text, { kind: 'system', orderId: order.id });
+  sendMessage(conv.id, actorId, JSON.stringify({ tpl, params: { id: order.id, ...params } }), { kind: 'system', orderId: order.id });
+}
+
+// Текст сообщения на языке читателя
+function displayText(kind, text, t) {
+  if (kind !== 'system' || !String(text).startsWith('{')) return text;
+  try {
+    const { tpl, params = {} } = JSON.parse(text);
+    if (params.price) params.priceText = require('./ads').fmtPrice(params.price, params.currency, t);
+    return t(tpl, params);
+  } catch {
+    return text;
+  }
 }
 
 function markRead(convId, userId) {
@@ -68,6 +80,7 @@ function ordersNeedingAction(userId) {
 function inbox(userId) {
   return db.all(`SELECT c.*, u.id AS other_id, u.username AS other_name, u.rating_avg AS other_rating, u.rating_count AS other_rating_count,
       (SELECT text FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_text,
+      (SELECT kind FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_kind,
       (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND read_at IS NULL AND (sender_id IS NULL OR sender_id != ?)) AS unread
     FROM conversations c JOIN users u ON u.id = CASE WHEN c.user_a = ? THEN c.user_b ELSE c.user_a END
     WHERE (c.user_a = ? OR c.user_b = ?) AND EXISTS (SELECT 1 FROM messages WHERE conversation_id = c.id)
@@ -93,5 +106,5 @@ function publicUser(id) {
 
 module.exports = {
   ORDER_STATUS, getOrCreateConversation, conversationFor, otherUser, canSend, sendMessage, orderEvent,
-  markRead, unreadMessages, ordersNeedingAction, inbox, messagesOf, refreshUserRating, publicUser,
+  displayText, markRead, unreadMessages, ordersNeedingAction, inbox, messagesOf, refreshUserRating, publicUser,
 };

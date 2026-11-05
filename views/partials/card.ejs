@@ -8,13 +8,13 @@
   </div>
   <p class="card-desc"><%= (c.description || '').slice(0, 140) %></p>
   <div class="card-foot">
-    <span title="Подписчики">👥 <b><%= h.short(c.subscribers) %></b></span>
-    <span title="Рост за неделю"><%- h.delta(c.growth_week) %> / нед.</span>
+    <span title="<%= t('Подписчики') %>">👥 <b><%= h.short(c.subscribers) %></b></span>
+    <span title="<%= t('Рост за неделю') %>"><%- h.delta(c.growth_week) %> <%= t('/ нед.') %></span>
     <span class="badge"><%= h.TYPES[c.type] %></span>
     <% if (c.boosted) { %><span class="badge boost">🚀</span><% } %>
-    <% if (c.err != null) { %><span title="ERR — охват поста к подписчикам">ERR <b><%= c.err %>%</b></span><% } %>
-    <% if (c.fraud_score >= 25) { %><span class="badge warn" title="Подозрение на накрутку">⚠️ накрутка?</span><% } %>
-    <% if (c.ads_enabled && c.owner_id) { %><span class="badge ads" title="Берёт рекламу">💰 реклама<% if (c.ad_min_price_uzs) { %> от <%= h.short(c.ad_min_price_uzs) %> сум<% } %></span><% if (c.owner_rating_count) { %><span class="badge" title="Рейтинг владельца по завершённым заказам">⭐ <%= c.owner_rating.toFixed(1) %>/10</span><% } %><% } %>
-    <% if (c.owner_id) { %><span class="badge ok" title="Владелец подтверждён">✔ владелец</span><% } %>
+    <% if (c.err != null) { %><span title="<%= t('ERR — охват поста к подписчикам') %>">ERR <b><%= c.err %>%</b></span><% } %>
+    <% if (c.fraud_score >= 25) { %><span class="badge warn" title="<%= t('Подозрение на накрутку') %>"><%= t('⚠️ накрутка?') %></span><% } %>
+    <% if (c.ads_enabled && c.owner_id) { %><span class="badge ads" title="<%= t('Берёт рекламу') %>"><%= t('💰 реклама') %><% if (c.ad_min_price_uzs) { %> <%= t('от {price} сум', { price: h.short(c.ad_min_price_uzs) }) %><% } %></span><% if (c.owner_rating_count) { %><span class="badge" title="<%= t('Рейтинг владельца по завершённым заказам') %>">⭐ <%= c.owner_rating.toFixed(1) %>/10</span><% } %><% } %>
+    <% if (c.owner_id) { %><span class="badge ok" title="<%= t('Владелец подтверждён') %>"><%= t('✔ владелец') %></span><% } %>
   </div>
 </a>

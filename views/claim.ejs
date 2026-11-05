@@ -1,35 +1,35 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
-  <h1>Подтверждение владения</h1>
-  <p>Канал: <a href="/c/<%= channel.username %>"><b><%= channel.title %></b> (<%= h.handle(channel) %>)</a></p>
-  <% if (channel.status === 'draft') { %><p class="small muted">Пока владение не подтверждено, канал — черновик: его видите только вы. Так мы убеждаемся, что канал добавил его владелец.</p><% } %>
+  <h1><%= t('Подтверждение владения') %></h1>
+  <p><%= t('Канал:') %> <a href="/c/<%= channel.username %>"><b><%= channel.title %></b> (<%= h.handle(channel) %>)</a></p>
+  <% if (channel.status === 'draft') { %><p class="small muted"><%= t('Пока владение не подтверждено, канал — черновик: его видите только вы. Так мы убеждаемся, что канал добавил его владелец.') %></p><% } %>
 
   <% if (botMethod) { %>
   <section class="claim-method">
-    <h2>Способ 1. Через бота <span class="badge ok">быстро</span></h2>
+    <h2><%= t('Способ 1. Через бота') %> <span class="badge ok"><%= t('быстро') %></span></h2>
     <% if (!user.telegram_id) { %>
-      <p class="small">Сначала войдите через Telegram или привяжите его к аккаунту — так бот поймёт, кто вы.</p>
+      <p class="small"><%= t('Сначала войдите через Telegram или привяжите его к аккаунту — так бот поймёт, кто вы.') %></p>
       <%- include('partials/tg-login', { next: '/c/' + channel.username + '/claim' }) %>
     <% } else { %>
       <ol class="steps">
-        <li>Добавьте бота <a href="https://t.me/<%= config.botUsername %>" target="_blank" rel="noopener"><b>@<%= config.botUsername %></b></a> в администраторы канала: настройки канала → «Администраторы» → «Добавить». Права можно все выключить.</li>
-        <li>Нажмите «Проверить через бота». Бот проверит, что ваш Telegram<% if (user.tg_username) { %> (@<%= user.tg_username %>)<% } %> — создатель или администратор канала.</li>
-        <li>После подтверждения бота можно удалить из администраторов.</li>
+        <li><%= t('Добавьте бота') %> <a href="https://t.me/<%= config.botUsername %>" target="_blank" rel="noopener"><b>@<%= config.botUsername %></b></a> <%= t('в администраторы канала: настройки канала → «Администраторы» → «Добавить». Права можно все выключить.') %></li>
+        <li><%= t('Нажмите «Проверить через бота». Бот проверит, что ваш Telegram') %><% if (user.tg_username) { %> (@<%= user.tg_username %>)<% } %> <%= t('— создатель или администратор канала.') %></li>
+        <li><%= t('После подтверждения бота можно удалить из администраторов.') %></li>
       </ol>
-      <form method="post" action="/c/<%= channel.username %>/verify-bot"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary">Проверить через бота</button></form>
+      <form method="post" action="/c/<%= channel.username %>/verify-bot"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary"><%= t('Проверить через бота') %></button></form>
     <% } %>
   </section>
   <% } %>
 
   <section class="claim-method">
-    <h2><%= botMethod ? 'Способ 2. ' : '' %>Код в описании</h2>
-    <% if (channel.is_private) { %><p class="small muted">Для частного канала проверка идёт по странице вашей ссылки-приглашения.</p><% } %>
+    <h2><%= botMethod ? t('Способ 2. ') : '' %><%= t('Код в описании') %></h2>
+    <% if (channel.is_private) { %><p class="small muted"><%= t('Для частного канала проверка идёт по странице вашей ссылки-приглашения.') %></p><% } %>
     <ol class="steps">
-      <li>Откройте настройки <%= channel.type === 'bot' ? 'бота в @BotFather (/setdescription или /setabouttext)' : (channel.is_private ? 'частного канала' : 'канала или группы') + ' в Telegram → «Описание»' %>.</li>
-      <li>Добавьте в описание этот код:<code class="big copy" data-copy="<%= code %>"><%= code %></code></li>
-      <li>Сохраните и нажмите «Проверить код». Telegram обновляет страницу с задержкой до минуты. После подтверждения код можно удалить.</li>
+      <li><%= t('Откройте настройки') %> <%= channel.type === 'bot' ? t('бота в @BotFather (/setdescription или /setabouttext)') : (channel.is_private ? t('частного канала') : t('канала или группы')) + t(' в Telegram → «Описание»') %>.</li>
+      <li><%= t('Добавьте в описание этот код:') %><code class="big copy" data-copy="<%= code %>"><%= code %></code></li>
+      <li><%= t('Сохраните и нажмите «Проверить код». Telegram обновляет страницу с задержкой до минуты. После подтверждения код можно удалить.') %></li>
     </ol>
-    <form method="post" action="/c/<%= channel.username %>/verify"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= botMethod ? 'btn-ghost' : 'btn-primary' %>">Проверить код</button></form>
+    <form method="post" action="/c/<%= channel.username %>/verify"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= botMethod ? 'btn-ghost' : 'btn-primary' %>"><%= t('Проверить код') %></button></form>
   </section>
 </div>
 <%- include('partials/footer') %>

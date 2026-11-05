@@ -30,9 +30,9 @@ function minPriceUzs(prices, currency) {
   return Math.round(currency === 'USD' ? min * config.usdUzs : min);
 }
 
-function fmtPrice(price, currency) {
+function fmtPrice(price, currency, t = (s) => s) {
   const n = Number(price).toLocaleString('ru-RU');
-  return currency === 'USD' ? `$${n}` : `${n} сум`;
+  return currency === 'USD' ? `$${n}` : `${n} ${t('сум')}`;
 }
 
 // Цена за 1000 просмотров по самой дешёвой позиции прайса, в сумах

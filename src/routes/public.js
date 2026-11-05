@@ -54,7 +54,11 @@ function renderCatalog(req, res, preset = {}) {
   const result = ch.list(f);
   const category = f.category ? db.get('SELECT * FROM categories WHERE slug = ?', f.category) : null;
   if (f.category && !category) return res.status(404).render('error', { title: 'Не найдено', message: 'Категория не найдена.' });
-  const title = req.path === '/ads' ? '💰 Реклама в Telegram-каналах' : category ? `${category.name} — Telegram` : f.type ? `${require('../helpers').TYPES_PLURAL[f.type]} Telegram` : f.q ? `Поиск: ${f.q}` : 'Каталог Telegram';
+  const tr = req.t;
+  const title = req.path === '/ads' ? tr('💰 Реклама в Telegram-каналах')
+    : category ? tr('{name} — Telegram', { name: tr(category.name) })
+    : f.type ? tr('{type} Telegram', { type: tr(require('../helpers').TYPES_PLURAL[f.type]) })
+    : f.q ? tr('Поиск: {q}', { q: f.q }) : tr('Каталог Telegram');
   res.render('catalog', { title, f, result, category, baseUrl: req.baseUrl + req.path });
 }
 
@@ -83,7 +87,7 @@ router.get('/top', (req, res) => {
   const language = LANGUAGES[req.query.language] ? req.query.language : '';
   const clean = req.query.clean === '1';
   const { items } = ch.list({ sort, type, category, language, clean, perPage: 100 });
-  res.render('top', { title: `Топ-100: ${TOP_TABS[sort]}`, items, sort, type, category, language, clean, TOP_TABS });
+  res.render('top', { title: req.t('Топ-100: {tab}', { tab: req.t(TOP_TABS[sort]) }), items, sort, type, category, language, clean, TOP_TABS });
 });
 
 router.get('/c/:username', (req, res) => {
@@ -180,11 +184,11 @@ router.post('/c/:username/refresh', requireUser, userLimit('refresh', 30, 60), a
   try {
     const c = loadChannel(req, res); if (!c) return;
     if (!canRefresh(c) && req.user.role !== 'admin') {
-      req.flash('info', `Данные обновлялись недавно. Повторить можно через ${REFRESH_MINUTES} минут.`);
+      req.flash('info', req.t('Данные обновлялись недавно. Повторить можно через {n} минут.', { n: REFRESH_MINUTES }));
       return back(req, res, c);
     }
     const r = await syncChannel(c, { priority: 'high' }).catch((e) => ({ ok: false, error: e.message }));
-    req.flash(r.ok ? 'success' : 'error', r.ok ? 'Данные и анализ обновлены.' : `Не удалось обновить: ${r.error}`);
+    req.flash(r.ok ? 'success' : 'error', r.ok ? 'Данные и анализ обновлены.' : req.t('Не удалось обновить: {e}', { e: req.t(r.error) }));
     back(req, res, c);
   } catch (e) { next(e); }
 });
@@ -194,9 +198,9 @@ router.post('/c/:username/boost', requireUser, (req, res) => {
   const c = loadChannel(req, res); if (!c) return;
   if (c.owner_id !== req.user.id && req.user.role !== 'admin') { req.flash('error', 'Продвигать может только подтверждённый владелец канала.'); return back(req, res, c); }
   if (!config.freeMode) { req.flash('info', 'Платное продвижение скоро будет доступно.'); return back(req, res, c); }
-  if (!canBoost(c)) { req.flash('info', `Поднимать канал можно раз в ${config.boostCooldownHours} ч.`); return back(req, res, c); }
+  if (!canBoost(c)) { req.flash('info', req.t('Поднимать канал можно раз в {n} ч.', { n: config.boostCooldownHours })); return back(req, res, c); }
   db.run(`UPDATE channels SET boost_until = datetime('now', ?), last_boost_at = datetime('now') WHERE id = ?`, `+${config.boostHours} hours`, c.id);
-  req.flash('success', `Канал продвигается ${config.boostHours} ч. — бесплатно!`);
+  req.flash('success', req.t('Канал продвигается {n} ч. — бесплатно!', { n: config.boostHours }));
   back(req, res, c);
 });
 
@@ -223,7 +227,7 @@ router.post('/c/:username/verify-bot', requireUser, userLimit('verify', 20, 15),
     if (!req.user.telegram_id) return fail('Сначала войдите через Telegram или привяжите Telegram к аккаунту.');
     let ok;
     try { ok = await isChannelAdmin(c.username, req.user.telegram_id); } catch (e) {
-      return fail(`Бот не смог проверить канал: ${e.message}. Убедитесь, что @${config.botUsername} добавлен в администраторы канала.`);
+      return fail(req.t('Бот не смог проверить канал: {e}. Убедитесь, что @{bot} добавлен в администраторы канала.', { e: e.message, bot: config.botUsername }));
     }
     if (!ok) return fail('Ваш Telegram не числится создателем или администратором этого канала.');
     confirmOwnership(req, c);
@@ -271,7 +275,7 @@ router.post('/add', requireUser, userLimit('add', 15, 60), async (req, res, next
     if (!invite && !username) return fail('Укажите ссылку вида https://t.me/username, @username или ссылку-приглашение частного канала https://t.me/+…');
     if (username) {
       const existing = db.get('SELECT username, status FROM channels WHERE username = ?', username);
-      if (existing) return fail(existing.status === 'approved' ? `@${username} уже есть в каталоге.` : `@${username} уже добавлен и ожидает модерации.`);
+      if (existing) return fail(req.t(existing.status === 'approved' ? '@{u} уже есть в каталоге.' : '@{u} уже добавлен и ожидает модерации.', { u: username }));
     }
     if (invite) {
       const existing = db.get('SELECT username FROM channels WHERE invite_link = ?', invite);
@@ -288,7 +292,7 @@ router.post('/add', requireUser, userLimit('add', 15, 60), async (req, res, next
     let info;
     const HIGH = { priority: 'high' };
     try { info = invite ? await fetchInviteInfo(invite, slug, HIGH) : await fetchChannelInfo(username, HIGH); } catch { info = undefined; }
-    if (info === null) return fail(invite ? 'Ссылка-приглашение недействительна или просрочена. Создайте постоянную ссылку в настройках канала.' : `Не удалось найти @${username} в Telegram. Проверьте, что у канала публичная ссылка именно такая (Telegram → настройки канала → Тип канала → Публичная ссылка). Если ссылка верная, попробуйте ещё раз через минуту.`);
+    if (info === null) return fail(invite ? 'Ссылка-приглашение недействительна или просрочена. Создайте постоянную ссылку в настройках канала.' : req.t('Не удалось найти @{u} в Telegram. Проверьте, что у канала публичная ссылка именно такая (Telegram → настройки канала → Тип канала → Публичная ссылка). Если ссылка верная, попробуйте ещё раз через минуту.', { u: username }));
     if (info && info.type === 'user') return fail('Это личный аккаунт. Добавлять можно только каналы, группы и ботов.');
     if (!info && invite) return fail('Не удалось получить данные канала из Telegram. Попробуйте позже.');
     info = info || { username, title: '@' + username, description: '', avatar_url: null, type: /bot$/i.test(username) ? 'bot' : 'channel', subscribers: 0, tg_verified: 0 };

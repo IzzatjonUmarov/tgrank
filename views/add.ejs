@@ -1,19 +1,19 @@
 <%- include('partials/header') %>
 <div class="narrow panel">
-  <h1>Добавить в каталог</h1>
-  <p class="muted">Каналы, группы и боты для узбекского рынка добавляются <b>бесплатно</b>. Название, аватар, описание и число подписчиков мы получаем из Telegram автоматически.</p>
-  <% if (user.role !== 'admin') { %><p class="flash flash-info small">Добавлять каналы могут только их владельцы. После отправки подтвердите владение — через бота или кодом в описании канала. До подтверждения канал никому не виден.</p><% } %>
-  <p class="small muted">🔒 <b>Частный канал?</b> Вставьте ссылку-приглашение (https://t.me/+…). Добавить частный канал может только владелец: после отправки мы попросим подтвердить права кодом в описании канала. Используйте постоянную ссылку без ограничения по сроку и числу вступлений.</p>
-  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <h1><%= t('Добавить в каталог') %></h1>
+  <p class="muted"><%= t('Каналы, группы и боты для узбекского рынка добавляются') %> <b><%= t('бесплатно') %></b><%= t('. Название, аватар, описание и число подписчиков мы получаем из Telegram автоматически.') %></p>
+  <% if (user.role !== 'admin') { %><p class="flash flash-info small"><%= t('Добавлять каналы могут только их владельцы. После отправки подтвердите владение — через бота или кодом в описании канала. До подтверждения канал никому не виден.') %></p><% } %>
+  <p class="small muted">🔒 <b><%= t('Частный канал?') %></b> <%= t('Вставьте ссылку-приглашение (https://t.me/+…). Добавить частный канал может только владелец: после отправки мы попросим подтвердить права кодом в описании канала. Используйте постоянную ссылку без ограничения по сроку и числу вступлений.') %></p>
+  <% if (error) { %><div class="flash flash-error"><%= t(error) %></div><% } %>
   <form method="post" action="/add" class="form">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
-    <label>Ссылка, @username или ссылка-приглашение<input name="link" required value="<%= form.link || '' %>" placeholder="https://t.me/username или https://t.me/+AbCdEf…" ></label>
-    <% if (user.role !== 'admin') { %><label class="check"><input type="checkbox" name="consent" value="1" required <%= form.consent ? 'checked' : '' %>> Я владелец этого канала (для частного канала — согласен опубликовать ссылку-приглашение в каталоге)</label><% } %>
-    <label>Категория<select name="category_id" required><option value="">— выберите —</option><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= form.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
-    <label>Язык<select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= (form.language || 'uz') === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
-    <label>Теги через запятую <small class="muted">(необязательно)</small><input name="tags" value="<%= form.tags || '' %>" placeholder="новости, ташкент, it"></label>
-    <button class="btn btn-primary"><%= user.role === 'admin' ? 'Добавить в каталог' : 'Далее: подтвердить владение' %></button>
+    <label><%= t('Ссылка, @username или ссылка-приглашение') %><input name="link" required value="<%= form.link || '' %>" placeholder="<%= t('https://t.me/username или https://t.me/+AbCdEf…') %>" ></label>
+    <% if (user.role !== 'admin') { %><label class="check"><input type="checkbox" name="consent" value="1" required <%= form.consent ? 'checked' : '' %>> <%= t('Я владелец этого канала (для частного канала — согласен опубликовать ссылку-приглашение в каталоге)') %></label><% } %>
+    <label><%= t('Категория') %><select name="category_id" required><option value=""><%= t('— выберите —') %></option><% categories.forEach((c) => { %><option value="<%= c.id %>" <%= form.category_id === c.id ? 'selected' : '' %>><%= c.icon %> <%= t(c.name) %></option><% }) %></select></label>
+    <label><%= t('Язык') %><select name="language"><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= (form.language || 'uz') === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+    <label><%= t('Теги через запятую') %> <small class="muted"><%= t('(необязательно)') %></small><input name="tags" value="<%= form.tags || '' %>" placeholder="<%= t('новости, ташкент, it') %>"></label>
+    <button class="btn btn-primary"><%= user.role === 'admin' ? t('Добавить в каталог') : t('Далее: подтвердить владение') %></button>
   </form>
-  <p class="small muted">Не принимаем: каналы не для узбекского рынка, мошенничество, 18+, наркотики, накрутку. Подтверждённые владельцы могут продвигать канал и указывать цены на рекламу.</p>
+  <p class="small muted"><%= t('Не принимаем: каналы не для узбекского рынка, мошенничество, 18+, наркотики, накрутку. Подтверждённые владельцы могут продвигать канал и указывать цены на рекламу.') %></p>
 </div>
 <%- include('partials/footer') %>

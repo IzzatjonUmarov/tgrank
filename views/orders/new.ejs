@@ -1,18 +1,18 @@
 <%- include('../partials/header') %>
 <div class="narrow panel">
-  <h1>📦 Заказать рекламу</h1>
-  <p>Канал: <a href="/c/<%= channel.username %>"><b><%= channel.title %></b></a> · <%= h.num(channel.subscribers) %> подписчиков<% if (channel.avg_reach) { %> · охват поста ≈ <%= h.num(channel.avg_reach) %><% } %></p>
-  <% if (error) { %><div class="flash flash-error"><%= error %></div><% } %>
+  <h1><%= t('📦 Заказать рекламу') %></h1>
+  <p><%= t('Канал:') %> <a href="/c/<%= channel.username %>"><b><%= channel.title %></b></a> · <%= h.num(channel.subscribers) %> <%= t('подписчиков') %><% if (channel.avg_reach) { %> <%= t('· охват поста ≈') %> <%= h.num(channel.avg_reach) %><% } %></p>
+  <% if (error) { %><div class="flash flash-error"><%= t(error) %></div><% } %>
   <form method="post" action="/orders/new" class="form">
     <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="channel_id" value="<%= channel.id %>">
-    <label>Формат<input name="format" list="order-formats" required maxlength="40" value="<%= form.format || '' %>" placeholder="1/24"></label>
+    <label><%= t('Формат') %><input name="format" list="order-formats" required maxlength="40" value="<%= form.format || '' %>" placeholder="1/24"></label>
     <datalist id="order-formats"><% prices.forEach((p) => { %><option value="<%= p.format %>"><%= h.ads.fmtPrice(p.price, channel.ad_currency) %></option><% }) %></datalist>
-    <% if (prices.length) { %><p class="small muted">Прайс: <%= prices.map((p) => `${p.format} — ${h.ads.fmtPrice(p.price, channel.ad_currency)}`).join(' · ') %></p><% } %>
-    <label>Цена, <%= channel.ad_currency === 'USD' ? '$' : 'сум' %> <small class="muted">— пусто = по прайсу или договорная</small><input name="price" inputmode="numeric" value="<%= form.price || '' %>"></label>
-    <label>Желаемая дата публикации<input type="date" name="publish_date" value="<%= form.publish_date || '' %>"></label>
-    <label>Что разместить<textarea name="note" rows="5" required minlength="10" maxlength="2000" placeholder="Тема, ссылка, текст или пожелания по времени"><%= form.note || '' %></textarea></label>
-    <button class="btn btn-primary">Отправить заказ владельцу</button>
+    <% if (prices.length) { %><p class="small muted"><%= t('Прайс:') %> <%= prices.map((p) => `${p.format} — ${h.ads.fmtPrice(p.price, channel.ad_currency)}`).join(' · ') %></p><% } %>
+    <label><%= t('Цена,') %> <%= channel.ad_currency === 'USD' ? '$' : t('сум') %> <small class="muted"><%= t('— пусто = по прайсу или договорная') %></small><input name="price" inputmode="numeric" value="<%= form.price || '' %>"></label>
+    <label><%= t('Желаемая дата публикации') %><input type="date" name="publish_date" value="<%= form.publish_date || '' %>"></label>
+    <label><%= t('Что разместить') %><textarea name="note" rows="5" required minlength="10" maxlength="2000" placeholder="<%= t('Тема, ссылка, текст или пожелания по времени') %>"><%= form.note || '' %></textarea></label>
+    <button class="btn btn-primary"><%= t('Отправить заказ владельцу') %></button>
   </form>
-  <p class="small muted">После завершения заказа вы и владелец канала оцените друг друга от 1 до 10 — из этих оценок складывается рейтинг пользователей.</p>
+  <p class="small muted"><%= t('После завершения заказа вы и владелец канала оцените друг друга от 1 до 10 — из этих оценок складывается рейтинг пользователей.') %></p>
 </div>
 <%- include('../partials/footer') %>

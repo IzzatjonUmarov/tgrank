@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ru">
+<html lang="<%= lang %>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><%= title %> — <%= config.siteName %></title>
-<meta name="description" content="<%= typeof description !== 'undefined' ? description : 'Каталог и рейтинг Telegram-каналов, групп и ботов: статистика подписчиков, рост, отзывы и бесплатное продвижение.' %>">
+<title><%= t(title) %> — <%= config.siteName %></title>
+<meta name="description" content="<%= typeof description !== 'undefined' ? description : t('Каталог и рейтинг Telegram-каналов, групп и ботов: статистика подписчиков, рост, отзывы и бесплатное продвижение.') %>">
 <link rel="stylesheet" href="/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
@@ -12,33 +12,34 @@
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="logo" href="/">📊 <%= config.siteName %></a>
-    <button class="burger" aria-label="Меню" data-toggle-nav>☰</button>
+    <button class="burger" aria-label="<%= t('Меню') %>" data-toggle-nav>☰</button>
     <nav class="nav">
-      <a href="/channels" class="<%= path === '/channels' ? 'active' : '' %>">Каналы</a>
-      <a href="/groups" class="<%= path === '/groups' ? 'active' : '' %>">Группы</a>
-      <a href="/bots" class="<%= path === '/bots' ? 'active' : '' %>">Боты</a>
-      <a href="/top" class="<%= path === '/top' ? 'active' : '' %>">Рейтинг</a>
-      <a href="/ads" class="<%= path === '/ads' ? 'active' : '' %>">💰 Реклама</a>
-      <a href="/pricing" class="<%= path === '/pricing' ? 'active' : '' %>">Тарифы<% if (config.freeMode) { %> <span class="badge free">free</span><% } %></a>
+      <a href="/channels" class="<%= path === '/channels' ? 'active' : '' %>"><%= t('Каналы') %></a>
+      <a href="/groups" class="<%= path === '/groups' ? 'active' : '' %>"><%= t('Группы') %></a>
+      <a href="/bots" class="<%= path === '/bots' ? 'active' : '' %>"><%= t('Боты') %></a>
+      <a href="/top" class="<%= path === '/top' ? 'active' : '' %>"><%= t('Рейтинг') %></a>
+      <a href="/ads" class="<%= path === '/ads' ? 'active' : '' %>"><%= t('💰 Реклама') %></a>
+      <a href="/pricing" class="<%= path === '/pricing' ? 'active' : '' %>"><%= t('Тарифы') %><% if (config.freeMode) { %> <span class="badge free">free</span><% } %></a>
     </nav>
     <form class="search" action="/search" method="get">
-      <input name="q" placeholder="Поиск каналов, групп, ботов…" value="<%= query.q || '' %>">
+      <input name="q" placeholder="<%= t('Поиск каналов, групп, ботов…') %>" value="<%= query.q || '' %>">
     </form>
+    <div class="lang-switch"><% for (const code of Object.keys(LANGS)) { %><a href="<%= h.qs(query, { lang: code }) %>" class="<%= lang === code ? 'active' : '' %>" hreflang="<%= code %>"><%= code.toUpperCase() %></a><% } %></div>
     <div class="userbox">
-      <a class="btn btn-primary btn-sm" href="/add">+ Добавить</a>
+      <a class="btn btn-primary btn-sm" href="/add"><%= t('+ Добавить') %></a>
       <% if (user) { %>
-        <% if (user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin">Админка</a><% } %>
-        <a class="btn btn-ghost btn-sm icon-btn" href="/messages" title="Сообщения">✉️<span class="count" id="unread-messages" <%= unread.messages ? '' : 'hidden' %>><%= unread.messages %></span></a>
-        <a class="btn btn-ghost btn-sm icon-btn" href="/orders" title="Заказы">📦<span class="count" id="unread-orders" <%= unread.orders ? '' : 'hidden' %>><%= unread.orders %></span></a>
+        <% if (user.role === 'admin') { %><a class="btn btn-ghost btn-sm" href="/admin"><%= t('Админка') %></a><% } %>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/messages" title="<%= t('Сообщения') %>">✉️<span class="count" id="unread-messages" <%= unread.messages ? '' : 'hidden' %>><%= unread.messages %></span></a>
+        <a class="btn btn-ghost btn-sm icon-btn" href="/orders" title="<%= t('Заказы') %>">📦<span class="count" id="unread-orders" <%= unread.orders ? '' : 'hidden' %>><%= unread.orders %></span></a>
         <a class="btn btn-ghost btn-sm" href="/account">👤 <%= user.username %></a>
       <% } else { %>
-        <a class="btn btn-ghost btn-sm" href="/login">Войти</a>
+        <a class="btn btn-ghost btn-sm" href="/login"><%= t('Войти') %></a>
       <% } %>
     </div>
   </div>
 </header>
 <% if (config.freeMode) { %>
-<div class="promo-strip">🎉 Этап запуска: все функции, включая продвижение и API, <b>бесплатны</b>.</div>
+<div class="promo-strip"><%= t('🎉 Этап запуска: все функции, включая продвижение и API,') %> <b><%= t('бесплатны') %></b>.</div>
 <% } %>
 <main class="wrap">
-<% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= flash.text %></div><% } %>
+<% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= t(flash.text) %></div><% } %>

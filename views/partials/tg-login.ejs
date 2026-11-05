@@ -3,5 +3,5 @@
     <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="<%= config.botUsername %>" data-size="large" data-radius="10" data-auth-url="<%= config.baseUrl %>/auth/telegram?state=<%= tgState() %><%= typeof next !== 'undefined' && next && next !== '/' ? '&next=' + encodeURIComponent(next) : '' %>" data-request-access="write"></script>
   </div>
 <% } else if (user && user.role === 'admin') { %>
-  <p class="flash flash-info small">Вход через Telegram выключен: задайте TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME в настройках сервера (Render → Environment).</p>
+  <p class="flash flash-info small"><%= t('Вход через Telegram выключен: задайте TELEGRAM_BOT_TOKEN и TELEGRAM_BOT_USERNAME в настройках сервера (Render → Environment).') %></p>
 <% } %>

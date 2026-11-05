@@ -1,94 +1,94 @@
 <%- include('partials/header') %>
-<div class="crumbs"><a href="/">Главная</a> / <a href="/<%= channel.type %>s"><%= h.TYPES_PLURAL[channel.type] %></a><% if (channel.category_slug) { %> / <a href="/category/<%= channel.category_slug %>"><%= channel.category_name %></a><% } %></div>
+<div class="crumbs"><a href="/"><%= t('Главная') %></a> / <a href="/<%= channel.type %>s"><%= h.TYPES_PLURAL[channel.type] %></a><% if (channel.category_slug) { %> / <a href="/category/<%= channel.category_slug %>"><%= t(channel.category_name) %></a><% } %></div>
 
 <% if (channel.status !== 'approved') { %>
   <div class="flash flash-<%= channel.status === 'rejected' ? 'error' : 'info' %>">
-    <%= { pending: 'Канал на модерации — он виден только вам и администраторам.', draft: 'Черновик: подтвердите, что вы владелец канала, — после этого он уйдёт на модерацию.', rejected: 'Канал отклонён модератором.' }[channel.status] %>
-    <% if (channel.status === 'draft') { %> <a href="/c/<%= channel.username %>/claim">Подтвердить владение →</a><% } %><% if (channel.reject_reason) { %> Причина: <%= channel.reject_reason %><% } %>
+    <%= { pending: t('Канал на модерации — он виден только вам и администраторам.'), draft: t('Черновик: подтвердите, что вы владелец канала, — после этого он уйдёт на модерацию.'), rejected: t('Канал отклонён модератором.') }[channel.status] %>
+    <% if (channel.status === 'draft') { %> <a href="/c/<%= channel.username %>/claim"><%= t('Подтвердить владение →') %></a><% } %><% if (channel.reject_reason) { %> <%= t('Причина:') %> <%= channel.reject_reason %><% } %>
   </div>
 <% } %>
 
 <section class="ch-head panel">
   <%- include('partials/avatar', { c: channel, size: 'lg' }) %>
   <div class="ch-info">
-    <h1><%= channel.title %><% if (channel.tg_verified) { %> <span class="tick" title="Верифицирован Telegram">✔</span><% } %></h1>
+    <h1><%= channel.title %><% if (channel.tg_verified) { %> <span class="tick" title="<%= t('Верифицирован Telegram') %>">✔</span><% } %></h1>
     <div class="muted"><%= h.handle(channel) %> · <%= h.TYPES[channel.type] %> · <%= h.LANGUAGES[channel.language] || channel.language %>
-      <% if (channel.owner_id) { %> · <span class="badge ok">✔ владелец подтверждён</span><% } %>
-      <% if (channel.boosted) { %> · <span class="badge boost">🚀 Продвигается</span><% } %></div>
+      <% if (channel.owner_id) { %> · <span class="badge ok"><%= t('✔ владелец подтверждён') %></span><% } %>
+      <% if (channel.boosted) { %> · <span class="badge boost"><%= t('🚀 Продвигается') %></span><% } %></div>
     <p class="ch-desc"><%= channel.description %></p>
     <% if (channel.tags) { %><div class="tags"><% channel.tags.split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => { %><a href="/search?q=<%= encodeURIComponent(t) %>">#<%= t %></a><% }) %></div><% } %>
     <div class="ch-actions">
-      <a class="btn btn-primary" href="<%= h.tgLink(channel) %>" target="_blank" rel="noopener nofollow">Открыть в Telegram</a>
+      <a class="btn btn-primary" href="<%= h.tgLink(channel) %>" target="_blank" rel="noopener nofollow"><%= t('Открыть в Telegram') %></a>
       <% if (channel.status === 'approved') { %>
-      <form method="post" action="/c/<%= channel.username %>/vote"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= votedToday ? 'btn-ghost' : 'btn-accent' %>" <%= votedToday ? 'disabled' : '' %>>👍 <%= votedToday ? 'Вы голосовали' : 'Голосовать' %> · <%= channel.votes %></button></form>
-      <form method="post" action="/c/<%= channel.username %>/favorite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost"><%= isFav ? '★ В избранном' : '☆ В избранное' %></button></form>
+      <form method="post" action="/c/<%= channel.username %>/vote"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn <%= votedToday ? 'btn-ghost' : 'btn-accent' %>" <%= votedToday ? 'disabled' : '' %>>👍 <%= votedToday ? t('Вы голосовали') : t('Голосовать') %> · <%= channel.votes %></button></form>
+      <form method="post" action="/c/<%= channel.username %>/favorite"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost"><%= isFav ? t('★ В избранном') : t('☆ В избранное') %></button></form>
       <% } %>
-      <button class="btn btn-ghost" data-copy="<%= config.baseUrl %>/c/<%= channel.username %>">🔗 Поделиться</button>
+      <button class="btn btn-ghost" data-copy="<%= config.baseUrl %>/c/<%= channel.username %>"><%= t('🔗 Поделиться') %></button>
     </div>
   </div>
 </section>
 
 <% if (fraud.key !== 'ok') { %>
 <div class="fraud-alert fraud-<%= fraud.key %>">
-  <div class="fraud-title">⚠️ <%= fraud.label %> <span class="fraud-score">риск <%= channel.fraud_score %>/100</span></div>
-  <ul><% fraudReasons.forEach((r) => { %><li><%= r.text %></li><% }) %></ul>
-  <p class="small">Это автоматическая оценка по открытым данным Telegram (динамика подписчиков и просмотры постов), а не доказательство. Проверяйте канал перед покупкой рекламы.</p>
+  <div class="fraud-title">⚠️ <%= t(fraud.label) %> <span class="fraud-score"><%= t('риск') %> <%= channel.fraud_score %>/100</span></div>
+  <ul><% fraudReasons.forEach((r) => { %><li><%= r.tpl ? t(r.tpl, r.params) : r.text %></li><% }) %></ul>
+  <p class="small"><%= t('Это автоматическая оценка по открытым данным Telegram (динамика подписчиков и просмотры постов), а не доказательство. Проверяйте канал перед покупкой рекламы.') %></p>
 </div>
 <% } %>
 
 <div class="kpis">
-  <div class="kpi"><span>Подписчики</span><b><%= h.num(channel.subscribers) %></b></div>
-  <div class="kpi"><span>За сутки</span><b><%- h.delta(channel.growth_day) %></b></div>
-  <div class="kpi"><span>За неделю</span><b><%- h.delta(channel.growth_week) %></b></div>
-  <div class="kpi"><span>За месяц</span><b><%- h.delta(channel.growth_month) %></b></div>
-  <div class="kpi"><span>Место в рейтинге</span><b>#<%= position %></b></div>
-  <div class="kpi"><span>Оценка</span><b><%= channel.rating_count ? channel.rating_avg.toFixed(1) : '—' %></b><small><%= channel.rating_count %> отзывов</small></div>
+  <div class="kpi"><span><%= t('Подписчики') %></span><b><%= h.num(channel.subscribers) %></b></div>
+  <div class="kpi"><span><%= t('За сутки') %></span><b><%- h.delta(channel.growth_day) %></b></div>
+  <div class="kpi"><span><%= t('За неделю') %></span><b><%- h.delta(channel.growth_week) %></b></div>
+  <div class="kpi"><span><%= t('За месяц') %></span><b><%- h.delta(channel.growth_month) %></b></div>
+  <div class="kpi"><span><%= t('Место в рейтинге') %></span><b>#<%= position %></b></div>
+  <div class="kpi"><span><%= t('Оценка') %></span><b><%= channel.rating_count ? channel.rating_avg.toFixed(1) : '—' %></b><small><%= channel.rating_count %> <%= t('отзывов') %></small></div>
 </div>
 
 <div class="cols-main">
   <div>
     <section class="panel">
-      <div class="section-head"><h2>Динамика подписчиков</h2><span class="muted small">обновлено <%= h.date(channel.last_checked_at) %></span></div>
+      <div class="section-head"><h2><%= t('Динамика подписчиков') %></h2><span class="muted small"><%= t('обновлено') %> <%= h.date(channel.last_checked_at) %></span></div>
       <div id="chart" class="chart chart-line" data-points='<%= JSON.stringify(history) %>'></div>
-      <% if (history.length < 2) { %><p class="muted small">График появится, когда накопится статистика (обновление каждые <%= config.statsIntervalHours %> ч.).</p><% } %>
+      <% if (history.length < 2) { %><p class="muted small"><%= t('График появится, когда накопится статистика (обновление каждые') %> <%= config.statsIntervalHours %> <%= t('ч.).') %></p><% } %>
     </section>
 
     <section class="panel">
-      <div class="section-head"><h2>📊 Анализ канала</h2>
-        <% if (user && channel.status === 'approved') { %><form method="post" action="/c/<%= channel.username %>/refresh"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm" <%= canRefresh || user.role === 'admin' ? '' : 'disabled title="Не чаще раза в 30 минут"' %>>↻ Обновить</button></form><% } %>
+      <div class="section-head"><h2><%= t('📊 Анализ канала') %></h2>
+        <% if (user && channel.status === 'approved') { %><form method="post" action="/c/<%= channel.username %>/refresh"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm" <%= canRefresh || user.role === 'admin' ? '' : 'disabled' %> title="<%= t('Не чаще раза в 30 минут') %>"><%= t('↻ Обновить') %></button></form><% } %>
       </div>
       <div class="kpis kpis-sm">
-        <div class="kpi" title="Средние просмотры поста старше суток"><span>Средний охват поста</span><b><%= channel.avg_reach != null ? h.num(channel.avg_reach) : '—' %></b></div>
-        <div class="kpi" title="Охват поста / подписчики"><span>ERR</span><b><%= channel.err != null ? channel.err + '%' : '—' %></b><small>норма 10–40%</small></div>
-        <div class="kpi"><span>Постов в день</span><b><%= channel.posts_per_day != null ? channel.posts_per_day : '—' %></b></div>
-        <div class="kpi" title="Реакции / просмотры"><span>Вовлечённость</span><b><%= channel.engagement != null ? channel.engagement + '%' : '—' %></b><small>реакции к просмотрам</small></div>
-        <div class="kpi"><span>Риск накрутки</span><b class="risk-<%= fraud.key %>"><%= channel.analyzed_at ? channel.fraud_score + '/100' : '—' %></b><small><%= channel.analyzed_at ? (fraud.key === 'ok' ? 'признаков нет' : fraud.label.toLowerCase()) : 'ещё не анализировался' %></small></div>
+        <div class="kpi" title="<%= t('Средние просмотры поста старше суток') %>"><span><%= t('Средний охват поста') %></span><b><%= channel.avg_reach != null ? h.num(channel.avg_reach) : '—' %></b></div>
+        <div class="kpi" title="<%= t('Охват поста / подписчики') %>"><span>ERR</span><b><%= channel.err != null ? channel.err + '%' : '—' %></b><small><%= t('норма 10–40%') %></small></div>
+        <div class="kpi"><span><%= t('Постов в день') %></span><b><%= channel.posts_per_day != null ? channel.posts_per_day : '—' %></b></div>
+        <div class="kpi" title="<%= t('Реакции / просмотры') %>"><span><%= t('Вовлечённость') %></span><b><%= channel.engagement != null ? channel.engagement + '%' : '—' %></b><small><%= t('реакции к просмотрам') %></small></div>
+        <div class="kpi"><span><%= t('Риск накрутки') %></span><b class="risk-<%= fraud.key %>"><%= channel.analyzed_at ? channel.fraud_score + '/100' : '—' %></b><small><%= channel.analyzed_at ? (fraud.key === 'ok' ? t('признаков нет') : t(fraud.label).toLowerCase()) : t('ещё не анализировался') %></small></div>
       </div>
       <% if (channel.is_private) { %>
-        <p class="muted small">🔒 Частный канал: Telegram не показывает его посты снаружи, поэтому анализируются подписчики и их динамика (в том числе резкие скачки).</p>
+        <p class="muted small"><%= t('🔒 Частный канал: Telegram не показывает его посты снаружи, поэтому анализируются подписчики и их динамика (в том числе резкие скачки).') %></p>
       <% } else if (channel.type !== 'channel') { %>
-        <p class="muted small">Охваты доступны только для каналов с открытым веб-просмотром. Для <%= channel.type === 'group' ? 'групп' : 'ботов' %> анализируется только динамика участников.</p>
+        <p class="muted small"><%= t(channel.type === 'group' ? 'Охваты доступны только для каналов с открытым веб-просмотром. Для групп анализируется только динамика участников.' : 'Охваты доступны только для каналов с открытым веб-просмотром. Для ботов анализируется только динамика участников.') %></p>
       <% } else if (!posts.length) { %>
-        <p class="muted small">Посты пока не загружены: у канала может быть закрыт веб-просмотр (t.me/s/<%= channel.username %>), или данные ещё не обновлялись.</p>
+        <p class="muted small"><%= t('Посты пока не загружены: у канала может быть закрыт веб-просмотр (t.me/s/') %><%= channel.username %><%= t('), или данные ещё не обновлялись.') %></p>
       <% } %>
       <% if (fraud.key === 'ok' && channel.analyzed_at && history.length < 7) { %>
-        <p class="muted small">Истории подписчиков пока мало (<%= history.length %> дн.) — проверка скачков станет точнее через неделю наблюдений.</p>
+        <p class="muted small"><%= t('Истории подписчиков пока мало (') %><%= history.length %> <%= t('дн.) — проверка скачков станет точнее через неделю наблюдений.') %></p>
       <% } %>
 
       <% if (deltas.length) { %>
-        <h3>Прирост подписчиков по дням</h3>
+        <h3><%= t('Прирост подписчиков по дням') %></h3>
         <div class="chart chart-bars" data-bars='<%= JSON.stringify(deltas.map((d) => ({ label: d.date, value: d.delta }))) %>'></div>
       <% } %>
       <% if (reachHistory.length >= 2) { %>
-        <h3>Динамика среднего охвата</h3>
+        <h3><%= t('Динамика среднего охвата') %></h3>
         <div class="chart chart-line" data-points='<%= JSON.stringify(reachHistory.map((r) => ({ date: r.date, subscribers: r.avg_reach }))) %>'></div>
       <% } %>
       <% if (posts.length) { %>
-        <h3>Просмотры последних постов</h3>
+        <h3><%= t('Просмотры последних постов') %></h3>
         <div class="chart chart-bars" data-bars='<%= JSON.stringify(posts.slice().reverse().map((p) => ({ label: "#" + p.post_id + " · " + p.date.slice(0, 10), value: p.views }))) %>'></div>
-        <details class="posts-table"><summary class="small">Таблица постов (<%= posts.length %>)</summary>
+        <details class="posts-table"><summary class="small"><%= t('Таблица постов ({n})', { n: posts.length }) %></summary>
           <div class="table-wrap"><table class="table">
-            <thead><tr><th>Пост</th><th>Дата</th><th class="r">Просмотры</th><th class="r">ERR</th><th class="r">Реакции</th></tr></thead>
+            <thead><tr><th><%= t('Пост') %></th><th><%= t('Дата') %></th><th class="r"><%= t('Просмотры') %></th><th class="r">ERR</th><th class="r"><%= t('Реакции') %></th></tr></thead>
             <tbody><% posts.forEach((p) => { %>
               <tr><td><a href="https://t.me/<%= channel.username %>/<%= p.post_id %>" target="_blank" rel="noopener nofollow">#<%= p.post_id %></a><% if (p.forwarded_from) { %> <small class="muted">↪ @<%= p.forwarded_from %></small><% } %></td>
                 <td class="small"><%= new Date(p.date).toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' }) %></td>
@@ -102,17 +102,17 @@
     </section>
 
     <section class="panel">
-      <h2>Отзывы (<%= reviews.length %>)</h2>
+      <h2><%= t('Отзывы ({n})', { n: reviews.length }) %></h2>
       <% if (user && channel.status === 'approved' && !isOwner) { %>
       <form class="review-form" method="post" action="/c/<%= channel.username %>/review">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
         <div class="rate">
           <% for (let i = 5; i >= 1; i--) { %><input type="radio" id="r<%= i %>" name="rating" value="<%= i %>" <%= myReview && myReview.rating === i ? 'checked' : '' %>><label for="r<%= i %>">★</label><% } %>
         </div>
-        <textarea name="text" rows="3" maxlength="2000" placeholder="Расскажите, чем полезен канал"><%= myReview ? myReview.text : '' %></textarea>
-        <button class="btn btn-primary btn-sm"><%= myReview ? 'Обновить отзыв' : 'Оставить отзыв' %></button>
+        <textarea name="text" rows="3" maxlength="2000" placeholder="<%= t('Расскажите, чем полезен канал') %>"><%= myReview ? myReview.text : '' %></textarea>
+        <button class="btn btn-primary btn-sm"><%= myReview ? t('Обновить отзыв') : t('Оставить отзыв') %></button>
       </form>
-      <% } else if (!user) { %><p class="muted"><a href="/login?next=/c/<%= channel.username %>">Войдите</a>, чтобы оставить отзыв и голосовать.</p><% } %>
+      <% } else if (!user) { %><p class="muted"><a href="/login?next=/c/<%= channel.username %>"><%= t('Войдите') %></a><%= t(', чтобы оставить отзыв и голосовать.') %></p><% } %>
       <% reviews.forEach((r) => { %>
         <div class="review"><div><b><%= r.username %></b> <span class="stars"><%= h.stars(r.rating) %></span> <small class="muted"><%= h.date(r.created_at) %></small></div><% if (r.text) { %><p><%= r.text %></p><% } %></div>
       <% }) %>
@@ -122,58 +122,58 @@
   <aside>
     <% if (channel.ads_enabled && channel.owner_id) { const prices = JSON.parse(channel.ad_prices || '[]'), cpm = h.ads.cpm(channel); %>
     <section class="panel ads-panel" id="ads">
-      <h3>💰 Беру рекламу</h3>
+      <h3><%= t('💰 Беру рекламу') %></h3>
       <% if (prices.length) { %>
         <table class="price-table"><% prices.forEach((p) => { %><tr><td><%= p.format %></td><td class="r"><b><%= h.ads.fmtPrice(p.price, channel.ad_currency) %></b></td></tr><% }) %></table>
       <% } %>
-      <% if (cpm) { %><p class="small muted" title="Цена самого дешёвого формата за 1000 просмотров по среднему охвату поста">CPM ≈ <b><%= h.num(cpm) %> сум</b> за 1000 просмотров</p><% } %>
+      <% if (cpm) { %><p class="small muted" title="<%= t('Цена самого дешёвого формата за 1000 просмотров по среднему охвату поста') %>">CPM ≈ <b><%= h.num(cpm) %> <%= t('сум') %></b> <%= t('за 1000 просмотров') %></p><% } %>
       <% if (channel.ad_note) { %><p class="small ad-note"><%= channel.ad_note %></p><% } %>
-      <% if (channel.fraud_score >= 25) { %><p class="small risk-medium">⚠️ У канала есть признаки накрутки — проверьте охваты перед покупкой.</p><% } %>
-      <% if (owner) { %><p class="small owner-line">Владелец: <a href="/u/<%= owner.id %>"><b><%= owner.username %></b></a> <%- include('partials/user-rating', { u: owner }) %></p><% } %>
+      <% if (channel.fraud_score >= 25) { %><p class="small risk-medium"><%= t('⚠️ У канала есть признаки накрутки — проверьте охваты перед покупкой.') %></p><% } %>
+      <% if (owner) { %><p class="small owner-line"><%= t('Владелец:') %> <a href="/u/<%= owner.id %>"><b><%= owner.username %></b></a> <%- include('partials/user-rating', { u: owner }) %></p><% } %>
       <% if (!user || user.id !== channel.owner_id) { %>
-        <a class="btn btn-primary btn-block" href="/orders/new?channel=<%= channel.id %>">📦 Заказать рекламу</a>
-        <a class="btn btn-ghost btn-block" href="/messages/with/<%= channel.owner_id %>?channel=<%= channel.id %>">✉️ Написать владельцу на сайте</a>
+        <a class="btn btn-primary btn-block" href="/orders/new?channel=<%= channel.id %>"><%= t('📦 Заказать рекламу') %></a>
+        <a class="btn btn-ghost btn-block" href="/messages/with/<%= channel.owner_id %>?channel=<%= channel.id %>"><%= t('✉️ Написать владельцу на сайте') %></a>
       <% } %>
       <a class="btn btn-ghost btn-block" href="https://t.me/<%= channel.ad_contact.slice(1) %>" target="_blank" rel="noopener nofollow">Telegram: <%= channel.ad_contact %></a>
-      <p class="small muted">Цены указывает владелец канала. Сделка проходит напрямую между вами и владельцем.</p>
+      <p class="small muted"><%= t('Цены указывает владелец канала. Сделка проходит напрямую между вами и владельцем.') %></p>
     </section>
     <% } %>
     <section class="panel">
-      <h3>Владельцу</h3>
+      <h3><%= t('Владельцу') %></h3>
       <% if (isOwner || (user && user.role === 'admin')) { %>
-        <p class="small muted">Поднимите канал в блок «Продвигаемые» на главной и вверх каталога на <%= config.boostHours %> ч. Раз в сутки — <b>бесплатно</b>.</p>
-        <form method="post" action="/c/<%= channel.username %>/boost"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent btn-block" <%= canBoost ? '' : 'disabled' %>>🚀 <%= canBoost ? 'Продвинуть бесплатно' : 'Доступно позже' %></button></form>
-        <a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit">⚙️ Настройки</a>
-        <% if (!channel.ads_enabled) { %><a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit#ads">💰 Принимать рекламу</a><% } %>
+        <p class="small muted"><%= t('Поднимите канал в блок «Продвигаемые» на главной и вверх каталога на') %> <%= config.boostHours %> <%= t('ч. Раз в сутки —') %> <b><%= t('бесплатно') %></b>.</p>
+        <form method="post" action="/c/<%= channel.username %>/boost"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-accent btn-block" <%= canBoost ? '' : 'disabled' %>>🚀 <%= canBoost ? t('Продвинуть бесплатно') : t('Доступно позже') %></button></form>
+        <a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit"><%= t('⚙️ Настройки') %></a>
+        <% if (!channel.ads_enabled) { %><a class="btn btn-ghost btn-block" href="/account/channel/<%= channel.id %>/edit#ads"><%= t('💰 Принимать рекламу') %></a><% } %>
         <div class="widget">
-          <p class="small muted">Бейдж для сайта или поста:</p>
-          <code class="copy" data-copy='<a href="<%= config.baseUrl %>/c/<%= channel.username %>">Мы в рейтинге <%= config.siteName %></a>'>&lt;a href="<%= config.baseUrl %>/c/<%= channel.username %>"&gt;…</code>
+          <p class="small muted"><%= t('Бейдж для сайта или поста:') %></p>
+          <code class="copy" data-copy='<a href="<%= config.baseUrl %>/c/<%= channel.username %>"><%= t('Мы в рейтинге') %> <%= config.siteName %></a>'>&lt;a href="<%= config.baseUrl %>/c/<%= channel.username %>"&gt;…</code>
         </div>
       <% } else if (!channel.owner_id) { %>
-        <p class="small muted">Это ваш канал? Подтвердите владение, чтобы управлять карточкой и бесплатно продвигать его.</p>
-        <a class="btn btn-ghost btn-block" href="/c/<%= channel.username %>/claim">Я владелец</a>
+        <p class="small muted"><%= t('Это ваш канал? Подтвердите владение, чтобы управлять карточкой и бесплатно продвигать его.') %></p>
+        <a class="btn btn-ghost btn-block" href="/c/<%= channel.username %>/claim"><%= t('Я владелец') %></a>
       <% } else { %>
-        <p class="small muted">Владелец канала подтверждён<% if (owner) { %>: <a href="/u/<%= owner.id %>"><%= owner.username %></a> <%- include('partials/user-rating', { u: owner }) %><% } %>.</p>
-        <% if (owner && (!user || user.id !== owner.id)) { %><a class="btn btn-ghost btn-block" href="/messages/with/<%= owner.id %>?channel=<%= channel.id %>">✉️ Написать владельцу</a><% } %>
+        <p class="small muted"><%= t('Владелец канала подтверждён') %><% if (owner) { %>: <a href="/u/<%= owner.id %>"><%= owner.username %></a> <%- include('partials/user-rating', { u: owner }) %><% } %>.</p>
+        <% if (owner && (!user || user.id !== owner.id)) { %><a class="btn btn-ghost btn-block" href="/messages/with/<%= owner.id %>?channel=<%= channel.id %>"><%= t('✉️ Написать владельцу') %></a><% } %>
       <% } %>
     </section>
     <section class="panel">
-      <h3>Информация</h3>
+      <h3><%= t('Информация') %></h3>
       <dl class="dl">
-        <dt>Категория</dt><dd><%= channel.category_name || '—' %></dd>
-        <dt>Добавлен</dt><dd><%= h.date(channel.created_at) %></dd>
-        <dt>Просмотров на сайте</dt><dd><%= h.num(channel.views) %></dd>
+        <dt><%= t('Категория') %></dt><dd><%= t(channel.category_name) || '—' %></dd>
+        <dt><%= t('Добавлен') %></dt><dd><%= h.date(channel.created_at) %></dd>
+        <dt><%= t('Просмотров на сайте') %></dt><dd><%= h.num(channel.views) %></dd>
       </dl>
       <% if (user && channel.status === 'approved') { %>
-      <details class="report"><summary class="small muted">Пожаловаться</summary>
+      <details class="report"><summary class="small muted"><%= t('Пожаловаться') %></summary>
         <form method="post" action="/c/<%= channel.username %>/report"><input type="hidden" name="_csrf" value="<%= csrf %>">
-          <textarea name="reason" rows="2" required minlength="5" placeholder="Причина: спам, мошенничество, накрутка…"></textarea>
-          <button class="btn btn-ghost btn-sm">Отправить</button></form>
+          <textarea name="reason" rows="2" required minlength="5" placeholder="<%= t('Причина: спам, мошенничество, накрутка…') %>"></textarea>
+          <button class="btn btn-ghost btn-sm"><%= t('Отправить') %></button></form>
       </details>
       <% } %>
     </section>
     <% if (similar.length) { %>
-    <section class="panel"><h3>Похожие</h3><% similar.forEach((c) => { %><%- include('partials/row', { c }) %><% }) %></section>
+    <section class="panel"><h3><%= t('Похожие') %></h3><% similar.forEach((c) => { %><%- include('partials/row', { c }) %><% }) %></section>
     <% } %>
   </aside>
 </div>

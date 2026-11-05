@@ -1,14 +1,14 @@
 <%- include('../partials/header') %>
-<h1>⭐ Рейтинг пользователей</h1>
-<p class="muted">Оценки от 1 до 10 ставят друг другу заказчики и владельцы каналов после завершённых заказов на рекламу. При равной средней выше тот, у кого больше оценок.</p>
+<h1><%= t('⭐ Рейтинг пользователей') %></h1>
+<p class="muted"><%= t('Оценки от 1 до 10 ставят друг другу заказчики и владельцы каналов после завершённых заказов на рекламу. При равной средней выше тот, у кого больше оценок.') %></p>
 <div class="panel table-wrap"><table class="table">
-  <thead><tr><th>#</th><th>Пользователь</th><th class="r">Рейтинг</th><th class="r">Оценок</th><th class="r">Выполнено заказов</th><th class="hide-sm">На сайте с</th></tr></thead>
+  <thead><tr><th>#</th><th><%= t('Пользователь') %></th><th class="r"><%= t('Рейтинг') %></th><th class="r"><%= t('Оценок') %></th><th class="r"><%= t('Выполнено заказов') %></th><th class="hide-sm"><%= t('На сайте с') %></th></tr></thead>
   <tbody>
   <% users.forEach((u, i) => { %>
     <tr data-href="/u/<%= u.id %>"><td class="pos"><%= i + 1 %></td><td><a href="/u/<%= u.id %>"><b><%= u.username %></b></a></td>
       <td class="r"><b><%= u.rating_avg.toFixed(1) %></b>/10</td><td class="r"><%= u.rating_count %></td><td class="r"><%= u.orders_done %></td><td class="hide-sm small"><%= h.date(u.created_at) %></td></tr>
   <% }) %>
-  <% if (!users.length) { %><tr><td colspan="6" class="muted">Оценок пока нет — они появятся после первых завершённых заказов.</td></tr><% } %>
+  <% if (!users.length) { %><tr><td colspan="6" class="muted"><%= t('Оценок пока нет — они появятся после первых завершённых заказов.') %></td></tr><% } %>
   </tbody>
 </table></div>
 <%- include('../partials/footer') %>

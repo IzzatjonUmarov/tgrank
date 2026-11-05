@@ -1,34 +1,34 @@
 <%- include('partials/header') %>
-<div class="crumbs"><a href="/">Главная</a> / <% if (category) { %><a href="/catalog">Каталог</a> / <%= category.name %><% } else { %><%= title %><% } %></div>
-<h1><% if (category) { %><%= category.icon %> <% } %><%= title %> <small class="muted"><%= h.num(result.total) %></small></h1>
+<div class="crumbs"><a href="/"><%= t('Главная') %></a> / <% if (category) { %><a href="/catalog"><%= t('Каталог') %></a> / <%= t(category.name) %><% } else { %><%= t(title) %><% } %></div>
+<h1><% if (category) { %><%= category.icon %> <% } %><%= t(title) %> <small class="muted"><%= h.num(result.total) %></small></h1>
 
 <div class="catalog">
   <aside class="filters panel">
     <form method="get" action="<%= baseUrl %>">
-      <label>Поиск<input name="q" value="<%= f.q %>" placeholder="Название, @username, описание"></label>
+      <label><%= t('Поиск') %><input name="q" value="<%= f.q %>" placeholder="<%= t('Название, @username, описание') %>"></label>
       <% if (!['/channels','/groups','/bots'].includes(baseUrl)) { %>
-      <label>Тип<select name="type"><option value="">Все</option><% for (const [k, v] of Object.entries(h.TYPES)) { %><option value="<%= k %>" <%= f.type === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+      <label><%= t('Тип') %><select name="type"><option value=""><%= t('Все') %></option><% for (const [k, v] of Object.entries(h.TYPES)) { %><option value="<%= k %>" <%= f.type === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
       <% } %>
       <% if (!baseUrl.startsWith('/category/')) { %>
-      <label>Категория<select name="category"><option value="">Все</option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= f.category === c.slug ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %></select></label>
+      <label><%= t('Категория') %><select name="category"><option value=""><%= t('Все') %></option><% categories.forEach((c) => { %><option value="<%= c.slug %>" <%= f.category === c.slug ? 'selected' : '' %>><%= c.icon %> <%= t(c.name) %></option><% }) %></select></label>
       <% } %>
-      <label>Язык<select name="language"><option value="">Любой</option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= f.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
-      <div class="two"><label>Подписчиков от<input name="min" type="number" min="0" value="<%= f.minSubs %>"></label><label>до<input name="max" type="number" min="0" value="<%= f.maxSubs %>"></label></div>
-      <label class="check"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> Только с подтверждённым владельцем</label>
-      <label class="check"><input type="checkbox" name="clean" value="1" <%= f.clean ? 'checked' : '' %>> Без подозрений на накрутку</label>
-      <% if (baseUrl !== '/ads') { %><label class="check"><input type="checkbox" name="ads" value="1" <%= f.ads ? 'checked' : '' %>> 💰 Берут рекламу</label><% } %>
-      <% if (f.ads) { %><label>Цена рекламы до, сум<input name="max_price" type="number" min="0" step="1000" value="<%= f.maxPrice || '' %>"></label><% } %>
-      <label>Сортировка<select name="sort">
-        <% const sorts = { popular: 'Популярные', subscribers: 'Подписчики', growth_day: 'Рост за сутки', growth_week: 'Рост за неделю', growth_month: 'Рост за месяц', votes: 'Голоса', rating: 'Рейтинг отзывов', reach: 'Охват поста', err: 'ERR', price: 'Цена рекламы', owner_rating: 'Рейтинг владельца', cpm: 'CPM (цена за 1000 просмотров)', new: 'Новые', views: 'Просмотры на сайте' }; %>
+      <label><%= t('Язык') %><select name="language"><option value=""><%= t('Любой') %></option><% for (const [k, v] of Object.entries(h.LANGUAGES)) { %><option value="<%= k %>" <%= f.language === k ? 'selected' : '' %>><%= v %></option><% } %></select></label>
+      <div class="two"><label><%= t('Подписчиков, от') %><input name="min" type="number" min="0" value="<%= f.minSubs %>"></label><label><%= t('Подписчиков, до') %><input name="max" type="number" min="0" value="<%= f.maxSubs %>"></label></div>
+      <label class="check"><input type="checkbox" name="verified" value="1" <%= f.verified ? 'checked' : '' %>> <%= t('Только с подтверждённым владельцем') %></label>
+      <label class="check"><input type="checkbox" name="clean" value="1" <%= f.clean ? 'checked' : '' %>> <%= t('Без подозрений на накрутку') %></label>
+      <% if (baseUrl !== '/ads') { %><label class="check"><input type="checkbox" name="ads" value="1" <%= f.ads ? 'checked' : '' %>> <%= t('💰 Берут рекламу') %></label><% } %>
+      <% if (f.ads) { %><label><%= t('Цена рекламы до, сум') %><input name="max_price" type="number" min="0" step="1000" value="<%= f.maxPrice || '' %>"></label><% } %>
+      <label><%= t('Сортировка') %><select name="sort">
+        <% const sorts = { popular: t('Популярные'), subscribers: t('Подписчики'), growth_day: t('Рост за сутки'), growth_week: t('Рост за неделю'), growth_month: t('Рост за месяц'), votes: t('Голоса'), rating: t('Рейтинг отзывов'), reach: t('Охват поста'), err: 'ERR', price: t('Цена рекламы'), owner_rating: t('Рейтинг владельца'), cpm: t('CPM (цена за 1000 просмотров)'), new: t('Новые'), views: t('Просмотры на сайте') }; %>
         <% for (const [k, v] of Object.entries(sorts)) { %><option value="<%= k %>" <%= f.sort === k ? 'selected' : '' %>><%= v %></option><% } %>
       </select></label>
-      <button class="btn btn-primary btn-block">Применить</button>
-      <a class="btn btn-ghost btn-block" href="<%= baseUrl %>">Сбросить</a>
+      <button class="btn btn-primary btn-block"><%= t('Применить') %></button>
+      <a class="btn btn-ghost btn-block" href="<%= baseUrl %>"><%= t('Сбросить') %></a>
     </form>
   </aside>
   <div>
     <% if (!result.items.length) { %>
-      <div class="empty panel"><p>Ничего не найдено.</p><a class="btn btn-primary" href="/add">Добавить канал</a></div>
+      <div class="empty panel"><p><%= t('Ничего не найдено.') %></p><a class="btn btn-primary" href="/add"><%= t('Добавить канал') %></a></div>
     <% } else { %>
       <div class="grid"><% result.items.forEach((c) => { %><%- include('partials/card', { c }) %><% }) %></div>
       <%- include('partials/pagination', { result }) %>

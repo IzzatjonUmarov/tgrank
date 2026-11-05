@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(requireUser);
 
 router.get('/', (req, res) => {
-  res.render('messages/index', { title: 'Сообщения', convs: social.inbox(req.user.id) });
+  res.render('messages/index', { title: 'Сообщения', convs: social.inbox(req.user.id).map((c) => ({ ...c, last_text: social.displayText(c.last_kind, c.last_text, req.t) })) });
 });
 
 // Начать переписку с пользователем (из профиля или со страницы канала)
@@ -32,9 +32,9 @@ router.get('/:id', (req, res) => {
   const other = social.publicUser(social.otherUser(conv, req.user.id));
   const channelId = parseInt(req.query.channel, 10) || conv.channel_id;
   res.render('messages/thread', {
-    title: `Переписка с ${other.username}`,
+    title: req.t('Переписка с {name}', { name: other.username }),
     conv, other,
-    messages: social.messagesOf(conv.id),
+    messages: social.messagesOf(conv.id).map((m) => ({ ...m, text: social.displayText(m.kind, m.text, req.t) })),
     channel: channelId ? db.get(`SELECT id, username, title, is_private FROM channels WHERE id = ? AND status = 'approved'`, channelId) : null,
     orders: db.all(`SELECT * FROM orders WHERE (customer_id = ? AND executor_id = ?) OR (customer_id = ? AND executor_id = ?) ORDER BY id DESC LIMIT 10`,
       req.user.id, other.id, other.id, req.user.id),
@@ -63,7 +63,7 @@ router.get('/:id/poll', (req, res) => {
   const items = social.messagesOf(conv.id, parseInt(req.query.after, 10) || 0);
   social.markRead(conv.id, req.user.id);
   res.set('Cache-Control', 'no-store').json(items.map((m) => ({
-    id: m.id, mine: m.sender_id === req.user.id, kind: m.kind, text: m.text, order_id: m.order_id,
+    id: m.id, mine: m.sender_id === req.user.id, kind: m.kind, text: social.displayText(m.kind, m.text, req.t), order_id: m.order_id,
     sender: m.sender_name, at: m.created_at,
   })));
 });

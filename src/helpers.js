@@ -52,4 +52,17 @@ function tgLink(c) {
 
 const ads = require('./ads');
 
-module.exports = { ads, handle, tgLink, num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };
+// Хелперы для шаблонов на языке запроса: подписи типов, «частный канал», валюта
+function forLang(t) {
+  const tr = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, t(v)]));
+  return {
+    ...module.exports,
+    TYPES: tr(TYPES),
+    TYPES_PLURAL: tr(TYPES_PLURAL),
+    LANGUAGES: tr(LANGUAGES),
+    handle: (c) => (c.is_private ? t('🔒 частный канал') : '@' + c.username),
+    ads: { ...ads, fmtPrice: (price, currency) => ads.fmtPrice(price, currency, t) },
+  };
+}
+
+module.exports = { forLang, ads, handle, tgLink, num, short, delta, TYPES, TYPES_PLURAL, LANGUAGES, stars, date, initials, qs, avatarColor, config };

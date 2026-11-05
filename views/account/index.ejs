@@ -1,32 +1,32 @@
 <%- include('../partials/header') %>
 <div class="section-head">
-  <h1>Личный кабинет</h1>
-  <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Выйти</button></form>
+  <h1><%= t('Личный кабинет') %></h1>
+  <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm"><%= t('Выйти') %></button></form>
 </div>
-<p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · с <%= h.date(user.created_at) %> · <a href="/u/<%= user.id %>">мой профиль</a> <%- include('../partials/user-rating', { u: user }) %></p>
+<p class="muted"><%= user.username %><% if (user.email) { %> · <%= user.email %><% } %> · <%= t('на сайте с {date}', { date: h.date(user.created_at) }) %> · <a href="/u/<%= user.id %>"><%= t('мой профиль') %></a> <%- include('../partials/user-rating', { u: user }) %></p>
 <section class="panel tg-link">
   <% if (user.telegram_id) { %>
-    <p>✅ Telegram привязан<% if (user.tg_username) { %>: <b>@<%= user.tg_username %></b><% } %>. Можно подтверждать владение каналами через бота.</p>
-    <p class="small muted">Ваш Telegram ID: <code class="copy" data-copy="<%= user.telegram_id %>"><%= user.telegram_id %></code><% if (user.role === 'admin') { %> — укажите его в ADMIN_TELEGRAM_IDS на сервере, чтобы роль админа надёжно закреплялась за вами<% } %>.</p>
+    <p><%= t('✅ Telegram привязан') %><% if (user.tg_username) { %>: <b>@<%= user.tg_username %></b><% } %><%= t('. Можно подтверждать владение каналами через бота.') %></p>
+    <p class="small muted"><%= t('Ваш Telegram ID:') %> <code class="copy" data-copy="<%= user.telegram_id %>"><%= user.telegram_id %></code><% if (user.role === 'admin') { %> <%= t('— укажите его в ADMIN_TELEGRAM_IDS на сервере, чтобы роль админа надёжно закреплялась за вами') %><% } %>.</p>
   <% } else { %>
-    <p><b>Привяжите Telegram</b> — чтобы входить в один клик и подтверждать владение каналами через бота.</p>
+    <p><b><%= t('Привяжите Telegram') %></b> <%= t('— чтобы входить в один клик и подтверждать владение каналами через бота.') %></p>
     <%- include('../partials/tg-login', { next: '/account' }) %>
   <% } %>
 </section>
-<div class="actions"><a class="btn btn-ghost btn-sm" href="/messages">✉️ Сообщения</a><a class="btn btn-ghost btn-sm" href="/orders">📦 Заказы</a></div>
+<div class="actions"><a class="btn btn-ghost btn-sm" href="/messages"><%= t('✉️ Сообщения') %></a><a class="btn btn-ghost btn-sm" href="/orders"><%= t('📦 Заказы') %></a></div>
 
 <section class="panel">
-  <div class="section-head"><h2>Мои каналы</h2><a class="btn btn-primary btn-sm" href="/add">+ Добавить</a></div>
-  <% if (!mine.length) { %><p class="muted">Вы ещё не добавляли каналы.</p><% } else { %>
+  <div class="section-head"><h2><%= t('Мои каналы') %></h2><a class="btn btn-primary btn-sm" href="/add"><%= t('+ Добавить') %></a></div>
+  <% if (!mine.length) { %><p class="muted"><%= t('Вы ещё не добавляли каналы.') %></p><% } else { %>
   <div class="table-wrap"><table class="table">
-    <thead><tr><th>Канал</th><th>Статус</th><th class="r">Подписчики</th><th>Владение</th><th></th></tr></thead>
+    <thead><tr><th><%= t('Канал') %></th><th><%= t('Статус') %></th><th class="r"><%= t('Подписчики') %></th><th><%= t('Владение') %></th><th></th></tr></thead>
     <tbody>
     <% mine.forEach((c) => { %>
       <tr>
         <td><a class="tcell" href="/c/<%= c.username %>"><%- include('../partials/avatar', { c }) %><span><b><%= c.title %></b><br><small class="muted"><%= h.handle(c) %></small></span></a></td>
-        <td><span class="badge st-<%= c.status %>"><%= { draft: 'черновик', pending: 'на модерации', approved: 'опубликован', rejected: 'отклонён' }[c.status] %></span><% if (c.boosted) { %> <span class="badge boost">🚀</span><% } %></td>
+        <td><span class="badge st-<%= c.status %>"><%= { draft: t('черновик'), pending: t('на модерации'), approved: t('опубликован'), rejected: t('отклонён') }[c.status] %></span><% if (c.boosted) { %> <span class="badge boost">🚀</span><% } %></td>
         <td class="r"><%= h.num(c.subscribers) %></td>
-        <td><% if (c.owner_id === user.id) { %><span class="badge ok">✔ вы владелец</span><% } else if (!c.owner_id) { %><a href="/c/<%= c.username %>/claim">Подтвердить</a><% } else { %>—<% } %></td>
+        <td><% if (c.owner_id === user.id) { %><span class="badge ok"><%= t('✔ вы владелец') %></span><% } else if (!c.owner_id) { %><a href="/c/<%= c.username %>/claim"><%= t('Подтвердить') %></a><% } else { %>—<% } %></td>
         <td class="r"><% if (c.owner_id === user.id) { %><a href="/account/channel/<%= c.id %>/edit">⚙️</a><% } %></td>
       </tr>
     <% }) %>
@@ -36,8 +36,8 @@
 </section>
 
 <section>
-  <h2>Избранное</h2>
-  <% if (!favorites.length) { %><p class="muted">Нажмите «☆ В избранное» на странице канала, чтобы сохранить его здесь.</p><% } else { %>
+  <h2><%= t('Избранное') %></h2>
+  <% if (!favorites.length) { %><p class="muted"><%= t('Нажмите «☆ В избранное» на странице канала, чтобы сохранить его здесь.') %></p><% } else { %>
   <div class="grid"><% favorites.forEach((c) => { %><%- include('../partials/card', { c }) %><% }) %></div><% } %>
 </section>
 <%- include('../partials/footer') %>
