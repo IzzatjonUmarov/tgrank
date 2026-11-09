@@ -53,7 +53,10 @@ function isStale(c) {
 async function checkChannel(username) {
   let c = ch.byUsername(username);
   if (c && c.status === 'approved') {
-    if (isStale(c)) { await syncChannel(c, HIGH).catch(() => null); c = ch.byUsername(username); }
+    if (isStale(c)) {
+      const r = await syncChannel(c, HIGH).catch(() => null);
+      c = r?.channel ? ch.byId(r.channel.id) : ch.byUsername(username) || c;
+    }
     return { channel: c };
   }
   const info = await fetchChannelInfo(username, HIGH).catch(() => undefined);
@@ -61,6 +64,13 @@ async function checkChannel(username) {
   if (!info) return { error: 'Канал @{u} не найден. Проверьте ссылку: канал должен быть публичным.' };
   if (info.type === 'user') return { error: 'Это личный аккаунт, а не канал.' };
   const page = info.type === 'channel' ? await fetchPosts(username, null, HIGH).catch(() => null) : null;
+  // Второй адрес канала: показываем карточку основного
+  if (page?.canonical && page.canonical.toLowerCase() !== username.toLowerCase()) {
+    const main = ch.byUsername(page.canonical);
+    if (main && main.status === 'approved') return { channel: main };
+    info.username = page.canonical;
+    c = c || ch.byUsername(page.canonical);
+  }
   const uz = isUzbekMarket(info, page?.text);
   // Узбекский канал выше порога сразу попадает в каталог — бот тоже наполняет базу
   if (!c && (config.region !== 'uz' || uz.ok) && (info.type === 'bot' || info.subscribers >= config.discoveryMinSubscribers)) {

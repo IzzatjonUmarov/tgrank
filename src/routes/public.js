@@ -189,7 +189,7 @@ router.post('/c/:username/refresh', requireUser, userLimit('refresh', 30, 60), a
     }
     const r = await syncChannel(c, { priority: 'high' }).catch((e) => ({ ok: false, error: e.message }));
     req.flash(r.ok ? 'success' : 'error', r.ok ? 'Данные и анализ обновлены.' : req.t('Не удалось обновить: {e}', { e: req.t(r.error) }));
-    back(req, res, c);
+    back(req, res, r.channel || c); // после объединения дублей адрес мог смениться на основной
   } catch (e) { next(e); }
 });
 
@@ -307,8 +307,16 @@ router.post('/add', requireUser, userLimit('add', 15, 60), async (req, res, next
       status, req.user.id, uz ? 1 : 0, invite ? 1 : 0, invite);
     const id = Number(lastInsertRowid);
     ch.recordStats(id, info.subscribers);
-    if (info.type === 'channel' && !invite) await syncPosts(id, username, HIGH).catch(() => {});
+    const page = info.type === 'channel' && !invite ? await syncPosts(id, username, HIGH).catch(() => null) : null;
     analyze(id);
+    // Добавили второй адрес канала, который уже есть в каталоге, — ведём на основную карточку
+    if (page?.canonical && page.canonical.toLowerCase() !== username.toLowerCase()) {
+      const main = require('../dedupe').resolveAlias(db.get('SELECT * FROM channels WHERE id = ?', id), page.canonical);
+      if (main.id !== id) {
+        req.flash('info', req.t('Этот канал уже есть в каталоге под основным адресом @{u}. Подтвердите владение на его странице.', { u: main.username }));
+        return res.redirect(`/c/${main.username}`);
+      }
+    }
 
     if (status === 'draft') {
       req.flash('info', 'Канал сохранён как черновик и пока никому не виден. Подтвердите, что вы владелец, — после этого он появится в каталоге.');

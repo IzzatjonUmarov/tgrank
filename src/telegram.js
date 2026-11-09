@@ -218,9 +218,13 @@ async function fetchPosts(username, before = null, opts = {}) {
   const texts = [];
   const mentions = new Set();
   const own = username.toLowerCase();
+  // Посты подписаны основным username канала: у канала с несколькими адресами
+  // (t.me/snow и t.me/paul ведут на @durov) так находим основной
+  const owners = {};
   for (const chunk of html.split('data-post="').slice(1)) {
-    const id = chunk.match(/^[^/"]+\/(\d+)"/);
+    const id = chunk.match(/^([^/"]+)\/(\d+)"/);
     if (!id) continue;
+    owners[id[1]] = (owners[id[1]] || 0) + 1;
     const body = chunk.split('tgme_widget_message_wrap')[0];
     const viewsText = body.match(/<span class="tgme_widget_message_views">([^<]+)<\/span>/);
     const date = body.match(/<time datetime="([^"]+)"/);
@@ -237,7 +241,7 @@ async function fetchPosts(username, before = null, opts = {}) {
     const text = body.match(/<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/);
     if (text) texts.push(decodeEntities(text[1]));
     posts.push({
-      id: Number(id[1]),
+      id: Number(id[2]),
       date: new Date(date[1]).toISOString(),
       views: parseCount(viewsText[1]),
       reactions,
@@ -248,7 +252,8 @@ async function fetchPosts(username, before = null, opts = {}) {
   }
   const reserved = new Set(['joinchat', 'addstickers', 'share', 'proxy', 'socks', 'iv', 'addtheme', 'setlanguage', 'contact', 'login', 'addemoji', 'boost', 'giftcode', 'invoice']);
   const found = [...mentions].filter((u) => u.toLowerCase() !== own && !reserved.has(u.toLowerCase()));
-  return { subscribers, posts, mentions: found, text: texts.join('\n').slice(0, 20000) };
+  const canonical = Object.entries(owners).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  return { subscribers, posts, mentions: canonical ? found.filter((u) => u.toLowerCase() !== canonical.toLowerCase()) : found, text: texts.join('\n').slice(0, 20000), canonical: canonical && /^[a-zA-Z][\w]{3,31}$/.test(canonical) ? canonical : null };
 }
 
 // Является ли пользователь Telegram создателем или админом канала (бот должен быть админом канала)

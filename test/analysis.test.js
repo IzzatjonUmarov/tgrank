@@ -29,6 +29,9 @@ const pages = {
   'https://t.me/fwdsource': page('fwdsource', 'Source', '12 345 members, 100 online', 'Python dasturlash va IT yangiliklar'),
   'https://t.me/s/goodchan?before=100': '<div class="tgme_widget_message_wrap"><div class="tgme_widget_message" data-post="goodchan/50"><div class="tgme_widget_message_text">Eski post @deepchan</div><span class="tgme_widget_message_views">9K</span><time datetime="2026-01-01T10:00:00+00:00"></time></div></div>',
   'https://t.me/deepchan': page('deepchan', 'Deep', '8 000 subscribers', "Samarqand yangiliklari va e'lonlar"),
+  // Второй адрес канала goodchan: свой профиль, но посты подписаны основным адресом
+  'https://t.me/goodalias': page('goodalias', 'Good Channel', '120 345 subscribers'),
+  'https://t.me/s/goodalias': Array.from({ length: 5 }, (_, i) => post('goodchan', 200 + i, '20K', daysAgo(5 - i))).join(''),
   'https://t.me/ruchan': page('ruchan', 'Russian News', '50 000 subscribers', 'Главные новости России'),
   'https://t.me/+PrivAteHash12345': page('x', 'Закрытый клуб', '3 210 subscribers', 'Закрытый канал для подписчиков из Самарканда'),
   'https://t.me/someuser': page('someuser', 'Some User', '@someuser'),
@@ -161,6 +164,38 @@ global.fetch = async (url, opts = {}) => {
   assert.ok(inline.results.length >= 1 && inline.results[0].input_message_content.message_text.includes('goodchan'));
   assert.deepEqual(bot.extractUsername({ text: '/start c_kunuzofficial' }), { username: 'kunuzofficial' });
   console.log('bot:', bot.botStats());
+
+  // Дубли: второй адрес не импортируется отдельно
+  importer.enqueue(['@goodalias']);
+  while (await importer.processOne()) {}
+  assert.ok(!ch('goodalias'), 'второй адрес не стал отдельной карточкой');
+  assert.equal(db.get(`SELECT error FROM import_queue WHERE username = 'goodalias'`).error, 'дубль @goodchan');
+  assert.equal((await tg.fetchPosts('goodalias')).canonical, 'goodchan');
+
+  // Уже попавший в каталог второй адрес объединяется при обновлении, голоса переходят на основную карточку
+  const dedupe = require(R + 'dedupe');
+  const goodId = ch('goodchan').id;
+  const { lastInsertRowid: aliasId } = db.run(`INSERT INTO channels (username, type, title, description, subscribers, status, votes) VALUES ('goodalias', 'channel', 'Good Channel', 'Новости Ташкента и Узбекистана', 120000, 'approved', 7)`);
+  db.run(`INSERT INTO users (username) VALUES ('fan')`);
+  db.run(`INSERT INTO favorites (user_id, channel_id) VALUES ((SELECT id FROM users WHERE username = 'fan'), ?)`, aliasId);
+  const votesBefore = ch('goodchan').votes;
+  const synced = await syncChannel(db.get('SELECT * FROM channels WHERE id = ?', aliasId));
+  assert.equal(synced.channel.id, goodId, 'обновление второго адреса ведёт на основную карточку');
+  assert.ok(!ch('goodalias'));
+  assert.equal(ch('goodchan').votes, votesBefore + 7, 'голоса перенесены');
+  assert.equal(db.get('SELECT COUNT(*) n FROM favorites WHERE channel_id = ?', goodId).n, 1, 'избранное перенесено');
+
+  // Дубли без постов (группы): то же название и описание, подписчиков почти столько же; карточка с владельцем остаётся
+  db.run(`INSERT INTO channels (username, type, title, description, subscribers, status) VALUES ('grp_one', 'group', 'IT Toshkent', 'Dasturchilar chati', 5000, 'approved')`);
+  db.run(`INSERT INTO channels (username, type, title, description, subscribers, status, owner_id) VALUES ('grp_two', 'group', 'IT Toshkent!', 'Dasturchilar chati', 4980, 'approved', (SELECT id FROM users WHERE username = 'fan'))`);
+  db.run(`INSERT INTO channels (username, type, title, description, subscribers, status) VALUES ('grp_other', 'group', 'IT Toshkent', 'Dasturchilar chati', 900, 'approved')`);
+  db.run(`INSERT INTO channels (username, type, title, subscribers, status) VALUES ('same_bot1', 'bot', 'Natija bot', 0, 'approved'), ('same_bot2', 'bot', 'Natija bot', 0, 'approved')`);
+  const merged = dedupe.mergeAll();
+  assert.equal(merged, 1);
+  assert.ok(ch('grp_two') && !ch('grp_one'), 'осталась карточка с подтверждённым владельцем');
+  assert.ok(ch('grp_other'), 'группа с заметно другим числом участников — не дубль');
+  assert.ok(ch('same_bot1') && ch('same_bot2'), 'разные боты с одинаковым названием не объединяются');
+  console.log('dedupe OK');
 
   const s = await syncChannel(ch('fakechan'));
   assert.ok(s.ok);

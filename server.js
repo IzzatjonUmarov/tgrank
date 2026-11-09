@@ -100,6 +100,7 @@ if (require.main === module) {
   if (process.env.DISABLE_IMPORT !== '1') {
     const importer = require('./src/importer');
     if (config.region === 'uz') require('./src/region').cleanupOnStart();
+    require('./src/dedupe').mergeAll();
     if (config.starterList) importer.enqueueStarterList();
     importer.runWorker();
   }

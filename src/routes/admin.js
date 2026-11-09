@@ -98,6 +98,11 @@ router.post('/channels/:id/delete', (req, res) => {
   db.run('DELETE FROM channels WHERE id = ?', Number(req.params.id));
   goBack(req, res);
 });
+router.post('/dedupe', (req, res) => {
+  const n = require('../dedupe').mergeAll();
+  req.flash(n ? 'success' : 'info', n ? `Объединено дублей: ${n}.` : 'Дублей не найдено.');
+  res.redirect('/admin');
+});
 router.post('/stats/update', (req, res) => {
   updateAll();
   req.flash('info', 'Обновление статистики запущено в фоне.');

@@ -78,6 +78,11 @@ async function processOne() {
 
   // Посты загружаем один раз: по ним проверяем регион, считаем охваты и ищем новые каналы
   const page = info.type === 'channel' ? await fetchPosts(info.username).catch(() => null) : null;
+  // Второй адрес уже известного канала — не добавляем отдельной карточкой
+  if (page?.canonical && page.canonical.toLowerCase() !== info.username.toLowerCase()) {
+    if (db.get('SELECT 1 FROM channels WHERE username = ?', page.canonical)) { finish('skipped', `дубль @${page.canonical}`); return true; }
+    info.username = page.canonical;
+  }
   const uz = isUzbekMarket(info, page?.text);
   if (config.region === 'uz' && item.region_check && !uz.ok) { finish('skipped', 'не для узбекского рынка'); return true; }
 

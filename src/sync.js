@@ -15,10 +15,12 @@ function fetchProfile(channel, opts = {}) {
 async function syncChannel(channel, opts = {}) {
   const info = await fetchProfile(channel, opts);
   if (!info) return { ok: false, error: channel.is_private ? 'ссылка-приглашение недействительна' : 'канал не найден в Telegram' };
-  applyInfo(channel.id, info);
   // У частных каналов нет веб-просмотра постов — только подписчики
   const page = info.type === 'channel' && !channel.is_private ? await fetchPosts(channel.username, null, opts).catch(() => null) : null;
-  return { ok: true, info, analysis: applyPage(channel, info, page) };
+  // Второй адрес канала (@snow вместо @durov) объединяем с основной карточкой
+  if (page?.canonical) channel = require('./dedupe').resolveAlias(channel, page.canonical);
+  applyInfo(channel.id, { ...info, username: channel.username });
+  return { ok: true, info, channel, analysis: applyPage(channel, info, page) };
 }
 
 // Обработка загруженной страницы постов: посты, автопоиск, регион, язык, анализ

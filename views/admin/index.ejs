@@ -18,5 +18,7 @@
   <h2>Статистика</h2>
   <p class="muted small">Подписчики обновляются автоматически каждые <%= config.statsIntervalHours %> ч. Можно запустить вручную:</p>
   <form method="post" action="/admin/stats/update"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-primary btn-sm" <%= statsRunning ? 'disabled' : '' %>><%= statsRunning ? 'Обновление идёт…' : 'Обновить всё сейчас' %></button></form>
+  <p class="muted small">Дубли — один канал под разными адресами (например, @durov и @snow) — объединяются автоматически при запуске и после каждого обновления. Можно запустить вручную:</p>
+  <form method="post" action="/admin/dedupe"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-ghost btn-sm">Объединить дубли</button></form>
 </section>
 <%- include('../partials/footer') %>

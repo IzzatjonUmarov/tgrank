@@ -22,6 +22,7 @@ async function updateAll({ log = console.log } = {}) {
     running = false;
   }
   log(`[stats] обновлено: ${ok}, ошибок: ${failed}`);
+  require('./dedupe').mergeAll();
 }
 
 module.exports = { updateAll, isRunning: () => running };
